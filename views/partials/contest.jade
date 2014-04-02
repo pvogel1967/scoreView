@@ -1,0 +1,39 @@
+.container-fluid
+	.page-header
+		.row
+			.col-sm-6
+				h3
+					span.label.label-primary Location:
+					| {{contestData.location}}
+			.col-sm-6
+				h3
+					span.label.label-primary Contest Director:
+					| {{contestData.contestDirector}}
+		.row
+			.col-sm-6
+				h4 
+					span.label.label-primary District:
+					| {{contestData.district}}
+			.col-sm-6
+				h4
+					span.label.label-primary Date:
+					| {{contestData.date}}
+	.row(ng-repeat="row in contestData.classData | rowfilter")
+		.div(ng-repeat="column in row",ng-class="columnClass")
+			.panel.panel-primary
+				.panel-heading
+					h3.panel-title {{column.name}}
+				table.table.table-striped.table-condensed
+					thead
+						tr
+							th Name
+							th Final Score
+							th(ng-repeat="round in column.contestants | roundfilter") Round {{round}}
+					tbody
+						tr(ng-repeat="contestant in column.contestants")
+							td 
+								a(ng-href="/{{contestData.contestID}}/class/{{column.code}}/contestant/{{contestant.realAmaNumber}}") {{contestant.name}}
+							td {{contestant.finalScore}}
+							td(ng-repeat="score in contestant.scoringData", ng-style="droppedStyle(score)") {{score.normalizedScore}}
+
+

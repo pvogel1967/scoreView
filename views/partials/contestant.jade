@@ -1,0 +1,89 @@
+div(id=main)
+	.container-fluid
+		.page-header
+			.row
+				.col-sm-4
+					h4
+						span.label.label-primary Pilot Results:
+						|  {{contestant.fullName}}
+				.col-sm-4
+					h4
+						span.label.label-primary Class:
+						|  {{contestant.className}}
+				.col-sm-4
+					h4
+						span.label.label-primary Placement:
+						|  {{contestant.finalPlacement}}
+			.row
+				.col-sm-4
+					h4
+						span.label.label-primary AMA:
+						|  {{contestant.amaNumber}}
+				.col-sm-4
+					h4
+						span.label.label-primary Percentage:
+						|  {{contestant.percentOfPossible}}
+				.col-sm-4
+					h4
+						span.label.label-primary AMA Points:
+						|  {{contestant.amaPoints}}
+		.row
+			.col-sm-12
+				.panel.panel-primary(ng-repeat="s in contestant.schedules")
+					.panel-heading
+						h4.panel-title Raw Results ({{$index}})
+					.panel-body
+						table.table-condensed.table-striped.table-bordered.col-md-12
+							thead
+								tr
+									th
+									th(colspan=2, ng-repeat="avg in s.flightAverages") Round {{$index+1}}
+									th(colspan=2,style="text-align:center") Overall
+								tr
+									th(style="text-align:left") Maneuver
+									th(ng-repeat="judge in judges(s)", ng-style="columnStyle($index)") Judge {{judge}}
+									th(style="text-align:center") Average
+									th(style="text-align:center") Cost
+							tbody
+								tr(ng-repeat="maneuver in s.maneuvers")
+									td 
+										b {{maneuver.name}}
+										|  (k={{maneuver.kfactor}})
+									td(ng-repeat="score in scores(s, maneuver)", ng-style="columnStyle($index)") {{score}}
+									td(style="text-align:center") {{s.maneuverAverages[$index]}}
+									td(style="text-align:center") {{((10-s.maneuverAverages[$index])*maneuver.kfactor).toPrecision(3)}}
+								tr
+									td
+										b Raw Total
+									td(ng-repeat="subTotal in s.subTotals", ng-style="columnStyle($index)") {{subTotal.score}}
+									td(colspan=2)
+								tr
+									td
+										b Flight Average
+									td(colspan=2, style="text-align:center", ng-repeat="avg in s.flightAverages") {{avg.score}}
+									td(colspan=2)
+								tr
+									td
+										b Percent of Possible
+									td(colspan=2, style="text-align:center", ng-repeat="percent in s.percentages") {{percent.score}}
+									td(colspan=2)
+		.row
+			.col-sm-8
+				.panel.panel-primary(ng-repeat="s in contestant.schedules")
+					.panel-heading
+						h4.panel-title Score Histogram
+					.panel-body
+						div(ui-chart="scoreHistogram", data="[s.scoreCount]", chart-options="scoreHistogramOptions")
+			.col-sm-4
+				.panel.panel-primary(ng-repeat="s in contestant.schedules")
+					.panel-heading
+						h4.panel-title Avg by k-Factor
+					.panel-body
+						div(ui-chart="kFactorAverages", data="kFactorAverages(s)", chart-options="kFactorOptions")
+		.row
+			.col-sm-12
+				.panel.panel-primary(ng-repeat="s in contestant.schedules")
+					.panel-heading
+						h4.panel-title Avg vs. Top Pilot
+					.panel-body
+						canvas(radarchart, options="radarOptions", data="radarFn(s)", width="winWidth()", height="winWidth()")
