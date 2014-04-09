@@ -73,5 +73,6 @@ server.listen(app.get('port'), function () {
 var mdns = require('mdns2');
 var ad = mdns.createAdvertisement(mdns.tcp('http'), 80);
 ad.start();
+console.log("mdns started");
 
 
