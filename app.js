@@ -6,6 +6,7 @@
 var express = require('express'),
   routes = require('./routes'),
   api = require('./routes/api'),
+  heartbeat = require('./routes/heartbeat'),
   http = require('http'),
   path = require('path');
 
@@ -43,6 +44,7 @@ if (app.get('env') === 'production') {
  */
 
 // serve index and view partials
+app.get('/heartbeat', heartbeat.heartbeat);
 app.get('/:id', routes.index);
 //app.get('/contestant/:amaid', routes.index);
 app.get('/partials/:name', routes.partials);
@@ -69,10 +71,12 @@ server.listen(app.get('port'), function () {
   console.log('Express server listening on port ' + app.get('port'));
 });
 
+if (app.get('env') === 'production') {
+} else {
 
-var mdns = require('mdns2');
-var ad = mdns.createAdvertisement(mdns.tcp('http'), 80);
-ad.start();
-console.log("mdns started");
-
+	var mdns = require('mdns2');
+	var ad = mdns.createAdvertisement(mdns.tcp('http'), 80);
+	ad.start();
+	console.log("mdns started");
+}
 
