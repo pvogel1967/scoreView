@@ -1,7 +1,7 @@
 /*
  * Serve JSON to our AngularJS client
  */
-
+var http = require('http');
 exports.contestResults = function(req, res)
 {
 	var MongoClient = require('mongodb').MongoClient;	
@@ -31,7 +31,7 @@ exports.contestResults = function(req, res)
 			}
 			if (req.method == 'POST') {
 				console.log("got POST of ContestData: " + req.body);
-				results.findAndModify({"contestID":req.params.id},
+				contests.findAndModify({"contestID":req.params.id},
 				[['_id', 'asc']],
 				req.body,
 				{"upsert":true},
@@ -62,11 +62,84 @@ exports.contestResults = function(req, res)
 	});
 };
 
+function sendToPatternScoring(uri, obj) {
+	var data = JSON.stringify(obj)
+	var options = {
+	    host: 'www.patternscoring.com',
+	    port: 80,
+	    path: uri,
+	    method: 'POST',
+	    headers: {
+	        'Content-Type': 'application/json',
+	        'Content-Length': Buffer.byteLength(data)
+	    }
+	};
+
+	var req = http.request(options, function(res) {
+	    res.setEncoding('utf8');
+	    res.on('data', function (chunk) {
+	        console.log("response from patternScoring: " + chunk);
+	    });
+	});
+
+	req.write(data);
+	req.end();
+}
+
+function updatePatternScoringCom(data) {
+	var MongoClient = require('mongodb').MongoClient;	
+	MongoClient.connect("mongodb://localhost:27017/patternscoring", function(err, db) {
+		if (err != null) {
+			console.log('could not update patternScoring.com, mongoConnect error: ' + err);
+			return;
+		}
+		if (db == null) {
+			console.log('could not update patternScoring.com, could not find db');
+			return;
+		}
+		db.collection('ContestData', function(err, contests) {
+			if (err != null) {
+				console.log('unable to update patternScoring.com, could not find ContestData' + err);
+				return;
+			}
+			if (contests == null) {
+				console.log('unable to update patternScoring.com, no contestData collection');
+				return;
+			}
+			contests.findOne({"contestID":data}, function (err, contest) {
+				if (err != null) {
+					console.log('unable to update patternScoring.com, cannot read contest: ' + data + ':' + err);
+					return;
+				}
+				sendToPatternScoring('/api/contest/' + data, contest);
+			});
+		});
+		db.collection('ContestantResult', function(err, contestantResults) {
+			if (err != null) {
+				console.log('unable to update patternScoring.com, could not find ContestantResults' + err);
+				return;
+			}
+			if (contestantResults == null) {
+				console.log('unable to update patternScoring.com, no ContestantResults collection');
+				return;
+			}
+			contestantResults.find({"contestID":data}, function(err, contestants) {
+				for (var i=0; i < contestants.length; i++) {
+					var c = contestants[i];
+					var uri = "/api/contest/" + data + "/class/" + c.className + "/" + c.amaNumber;
+					sendToPatternScoring(uri, c);
+				}
+			});
+		});
+	});
+}
+
 exports.contestChange = function(socket) 
 {
 	socket.on('scoresUpdated', function(data) {
-		console.log('got scoresUpdated event');
+		console.log('got scoresUpdated event: ' + data);
 		socket.broadcast.emit('contestChanged', data);
+		updatePatternScoringCom(data);
 	});
 	socket.on('judgeScoresSaved', function(data) {
 		console.log('got judgeScoresSaved event');
