@@ -75,16 +75,26 @@ function sendToPatternScoring(uri, obj) {
 	    }
 	};
 
+	console.log('POSTing to http://www.patternscoring.com' + uri + ": " + data);
 	var req = http.request(options, function(res) {
 	    res.setEncoding('utf8');
 	    res.on('data', function (chunk) {
 	        console.log("response from patternScoring: " + chunk);
+	        //callback();
 	    });
 	});
 
 	req.write(data);
 	req.end();
 }
+
+var iterateList = function(list, index, asyncTask, callback) {
+	if (index >= list.length) return;
+	var item = list[index];
+	asyncTask(item, function () { 
+		callback(list, ++index, asyncTask, callback);
+	});
+};
 
 function updatePatternScoringCom(data) {
 	var MongoClient = require('mongodb').MongoClient;	
@@ -111,24 +121,52 @@ function updatePatternScoringCom(data) {
 					console.log('unable to update patternScoring.com, cannot read contest: ' + data + ':' + err);
 					return;
 				}
-				sendToPatternScoring('/api/contest/' + data, contest);
-			});
-		});
-		db.collection('ContestantResult', function(err, contestantResults) {
-			if (err != null) {
-				console.log('unable to update patternScoring.com, could not find ContestantResults' + err);
-				return;
-			}
-			if (contestantResults == null) {
-				console.log('unable to update patternScoring.com, no ContestantResults collection');
-				return;
-			}
-			contestantResults.find({"contestID":data}, function(err, contestants) {
-				for (var i=0; i < contestants.length; i++) {
-					var c = contestants[i];
-					var uri = "/api/contest/" + data + "/class/" + c.className + "/" + c.amaNumber;
-					sendToPatternScoring(uri, c);
+				if (contest == null) {
+					console.log('unable to update patternScoring.com, cannot find contest: ' + data);
+					return;
 				}
+				db.collection('ContestantResult', function(err, contestantResults) {
+					if (err != null) {
+						console.log('unable to update patternScoring.com, could not find ContestantResults' + err);
+						return;
+					}
+					if (contestantResults == null) {
+						console.log('unable to update patternScoring.com, no ContestantResults collection');
+						return;
+					}
+					console.log('looking for contestantResults for contestID: ' + data)
+					contestantResults.find({"contestID":data}).toArray(function(err, contestants) {
+						if (err != null) {
+							console.log('unable to update patternScoring.com, no contestantResults found:' + err);
+							return;
+						}
+						if (typeof(contestants) == 'undefined' || contestants === null || contestants.length == 0) {
+							console.log('found no contestantResult records');
+						}
+						delete contest['_id'];
+						console.log('found ' + contestants.length + ' contestantResult records');
+						sendToPatternScoring('/api/contest/' + data, contest);
+						for (var i=0; i<contestants.length; i++) {
+							var item = contestants[i];
+							var uri = "/api/contest/" + data + "/class/" + item.className + "/contestant/" + item.amaNumber;
+							console.log('found contestantResult: ' + uri);
+							delete item["_id"];
+							sendToPatternScoring(uri, item);
+						}
+						//, function() {
+						//	var index = 0;
+						//	if (index < contestants.length) {
+						//		c = contestants[index];
+						//	}
+						//	iterateList(contestants, 0, function (item, callback) {
+						//		var uri = "/api/contest/" + data + "/class/" + item.className + "/contestant/" + item.amaNumber;
+						//		console.log('found contestantResult: ' + uri);
+						//		delete c["_id"];
+						//		sendToPatternScoring(uri, c, callback);
+						//	}, iterateList);
+						//});
+					});
+				});
 			});
 		});
 	});

@@ -6,39 +6,15 @@ html(ng-app="myApp")
 		meta(name='viewport', content='width=device-width, initial-scale=1, target-densityDpi=device-dpi')
 		title Contest Results
 		link(rel='stylesheet', href='/css/bootstrap.min.css')
-		link(rel='stylesheet', href='/css/bootstrap-theme.min.css')
+		link(rel='stylesheet', href='/css/bootstrap-cosmo.min.css')
 		link(rel='stylesheet', href='/css/jquery.jqplot.css')
 	body
-		.container-fluid
-			.page-header
-				.row
-					.col-sm-6
-						.panel.panel-primary
-							.panel-heading
-								h3.panel-title Pattern ScoreBoard
-							div
-								| Welcome to the Electronic Pattern Scoring System Scoreboard
-								| this system combines an iPod touch, MFi game controller and 
-								| a PC-based scoring system and web server to provide completely
-								| automatic recording of scores from judges at pattern events with 
-								| a real-time display of the current standings from a monitor at the field
-								| and from any mobile device a pilot may have.  Including detailed reports
-								| for each pilot's individual scores.  After a contest, the scores are
-								| available on http://www.patternscoring.com.
-					.col-sm-6
-						.panel.panel-primary
-							.panel-heading
-								h3.panel-title Support Us!
-							div
-								| We hope you like the system!  It's been a labor of love by a self-confessed
-								| pattern addict.  If you would like to support the costs of the system
-								| (iPods, game controllers, web hosting fees, etc.) we appreciate it!
-								br
-								form(action="https://www.paypal.com/cgi-bin/webscr", method="post", target="_top")
-									input(type="hidden", name="cmd", value="_s-xclick")
-									input(type="hidden", name="hosted_button_id", value="7JWN5AL36S3KY")
-									input(type="image", src="https://www.paypalobjects.com/en_US/i/btn/btn_donate_LG.gif", border="0", name="submit", alt="PayPal - The safer, easier way to pay online!")
-									img(alt="", border="0", src="https://www.paypalobjects.com/en_US/i/scr/pixel.gif", width="1", height="1")
+		.navbar.navbar-inverse.navbar-fixed-top
+			.container-fluid
+				.navbar-header
+					a.navbar-brand(href='/',title='Pattern Score Board')
+						img(src='/img/Logo40.png',style='max-width:40px; margin-top:-10px')
+					a.navbar-brand(href='/') Pattern Score Board
 		block body
 		script(type='text/javascript', src='/js/jquery.min.js')
 		script(type='text/javascript', src='/js/bootstrap.min.js')
