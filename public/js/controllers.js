@@ -9,11 +9,30 @@ angular.module('myApp.controllers', ['angles']).
   	//		url: '/api/contest/' + $routeParams.id
   	//	}).
 	$scope.contestData = contestService.query({contestId:$routeParams.id});	
-	$scope.columnClass = ($window.innerWidth >= 1200) ? "col-lg-4" : "col-md-6";	
+	$scope.columnClass = ($window.innerWidth >= 1200) ? "col-lg-4" : "col-lg-6 col-md-8 col-sm-12";	
 	socket.on('contestChanged', function(data) {
 		console.log('got contestChanged event');
 		$scope.contestData = contestService.query({contestId:$routeParams.id});	
 	});
+
+	$scope.computeRows = function(data) {
+		if (typeof(data) == 'undefined') return;
+		if (typeof(data.classData) == 'undefined') return;
+      	var rows = [];
+	  	var colCount = ($window.innerWidth >= 1200) ? 3 : 2;
+	 	var columns = [];
+	  	for (var i = 0; i< data.classData.length; i++) {
+			columns.push(data.classData[i]);
+			if (columns.length == colCount) {
+				rows.push(columns);
+				columns = [];
+			}
+	  	}
+	  	if (columns.length > 0) {
+			rows.push(columns);
+	  	}
+	  	return rows;
+    };
 
 	$scope.droppedStyle = function(score) {
 		if (score.roundDropped) {
@@ -24,8 +43,12 @@ angular.module('myApp.controllers', ['angles']).
 
 	$scope.$watch(function() { return $window.innerWidth;},function(newWidth, oldWidth) {
 		if (newWidth != oldWidth) {
-			$scope.columnClass = (newWidth >= 1200) ? "col-lg-4" : "col-md-6";
+			$scope.columnClass = (newWidth >= 1200) ? "col-lg-4" : "col-lg-6 col-md-8 col-sm-12";
+			computeRows();
 		}
+	});
+	$scope.$watch(function() { return $scope.contestData.classData;}, function(oldData, newData) {
+		$scope.classRows = $scope.computeRows($scope.contestData);
 	});
 	window.onresize=function() { $scope.$apply();}
   }).
