@@ -29,12 +29,12 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use(app.router);
 
 // development only
-if (app.get('env') === 'development') {
+if (app.get('env') == 'development') {
   app.use(express.errorHandler());
 }
 
 // production only
-if (app.get('env') === 'production') {
+if (app.get('env') == 'production') {
   // TODO
 }
 
@@ -52,7 +52,9 @@ app.get('/partials/:name', routes.partials);
 
 // JSON API
 app.get('/api/contest/:id', api.contestResults);
+app.post('/api/contest/:id', api.contestResults);
 app.get('/api/contest/:id/class/:classcode/contestant/:amaid', api.contestantResults);
+app.post('/api/contest/:id/class/:classcode/contestant/:amaid', api.contestantResults);
 
 // redirect all others to the index (HTML5 history)
 app.get('*', routes.index);
