@@ -77,7 +77,7 @@ if (app.get('env') === 'production') {
 } else {
 
 	var mdns = require('mdns2');
-	var ad = mdns.createAdvertisement(mdns.tcp('http'), 80);
+	var ad = mdns.createAdvertisement(mdns.tcp('http'), 80, {txtRecord:{name:"PatternScoring"}});
 	ad.start();
 	console.log("mdns started");
 }
