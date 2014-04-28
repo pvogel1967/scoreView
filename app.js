@@ -12,7 +12,18 @@ var express = require('express'),
 
 var app = module.exports = express();
 
-
+var MongoClient = require('mongodb').MongoClient; 
+MongoClient.connect("mongodb://localhost:27017/patternscoring", function(err, db) {
+  if (err != null) {
+    console.log('unable to open DB: ' + err);
+    process.exit();
+  }
+  if (db == null) {
+    res.end('could not find db for scoreview');
+    process.exit();
+  }
+  global.db = db;
+}
 
 /**
  * Configuration
