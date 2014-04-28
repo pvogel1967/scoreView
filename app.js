@@ -10,10 +10,21 @@ var express = require('express'),
   http = require('http'),
   path = require('path');
 
+
+var MongoClient = require('mongodb').MongoClient; 
+MongoClient.connect("mongodb://localhost:27017/patternscoring", function(err, db) {
+  if (err != null) {
+    console.log('unable to open DB: ' + err);
+    process.exit();
+  }
+  if (db == null) {
+    res.end('could not find db for scoreview');
+    process.exit();
+  }
+  global.db = db;
+});
+
 var app = module.exports = express();
-
-
-
 /**
  * Configuration
  */
@@ -77,7 +88,7 @@ if (app.get('env') === 'production') {
 } else {
 
 	var mdns = require('mdns2');
-	var ad = mdns.createAdvertisement(mdns.tcp('http'), 80);
+	var ad = mdns.createAdvertisement(mdns.tcp('http'), 80, {txtRecord:{name:"PatternScoring"}});
 	ad.start();
 	console.log("mdns started");
 }
