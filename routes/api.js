@@ -39,6 +39,11 @@ exports.contestResults = function(req, res)
 					console.log(err);
 					return;
 				}
+				if (contest == null) {
+					res.statusCode = 200;
+					res.end('no contest');
+					return;
+				}
 				if (contest.classData[contest.classData.length-1] === null) {
 					contest.classData.pop();
 				}

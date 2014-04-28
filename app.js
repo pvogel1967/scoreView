@@ -10,7 +10,6 @@ var express = require('express'),
   http = require('http'),
   path = require('path');
 
-var app = module.exports = express();
 
 var MongoClient = require('mongodb').MongoClient; 
 MongoClient.connect("mongodb://localhost:27017/patternscoring", function(err, db) {
@@ -23,8 +22,9 @@ MongoClient.connect("mongodb://localhost:27017/patternscoring", function(err, db
     process.exit();
   }
   global.db = db;
-}
+});
 
+var app = module.exports = express();
 /**
  * Configuration
  */
