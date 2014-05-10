@@ -9,7 +9,7 @@ angular.module('myApp.controllers', ['angles']).
   	//		url: '/api/contest/' + $routeParams.id
   	//	}).
 	$scope.contestData = contestService.query({contestId:$routeParams.id});	
-	$scope.columnClass = ($window.innerWidth >= 1200) ? "col-lg-4" : "col-lg-6 col-md-8 col-sm-12";	
+	$scope.columnClass = ($window.innerWidth >= 1200) ? "col-lg-6 col-md-12" : "col-lg-6 col-md-12";	
 	socket.on('contestChanged', function(data) {
 		console.log('got contestChanged event');
 		$scope.contestData = contestService.query({contestId:$routeParams.id});	
@@ -19,7 +19,7 @@ angular.module('myApp.controllers', ['angles']).
 		if (typeof(data) == 'undefined') return;
 		if (typeof(data.classData) == 'undefined') return;
       	var rows = [];
-	  	var colCount = ($window.innerWidth >= 1200) ? 3 : 2;
+	  	var colCount = ($window.innerWidth >= 1200) ? 2 : 2;
 	 	var columns = [];
 	  	for (var i = 0; i< data.classData.length; i++) {
 			columns.push(data.classData[i]);
@@ -43,7 +43,7 @@ angular.module('myApp.controllers', ['angles']).
 
 	$scope.$watch(function() { return $window.innerWidth;},function(newWidth, oldWidth) {
 		if (newWidth != oldWidth) {
-			$scope.columnClass = (newWidth >= 1200) ? "col-lg-4" : "col-lg-6 col-md-8 col-sm-12";
+			$scope.columnClass = (newWidth >= 1200) ? "col-lg-6 col-md-12" : "col-lg-6 col-md-12";
 			computeRows();
 		}
 	});
