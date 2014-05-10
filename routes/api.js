@@ -29,6 +29,7 @@ exports.contestResults = function(req, res)
 					console.log(err);
 					return;
 				}
+				io.sockets.emit('contestChanged', req.params.id);
 				res.json(result);
 			});
 		} else {
