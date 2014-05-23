@@ -77,7 +77,7 @@ app.get('*', routes.index);
 
 var server= http.createServer(app);
 var io = require('socket.io').listen(server);
-
+global.io = io;
 io.sockets.on('connection', api.contestChange); 
 
 server.listen(app.get('port'), function () {
