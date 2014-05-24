@@ -17,6 +17,10 @@ config(function ($routeProvider, $locationProvider) {
         templateUrl: '/partials/contestant',
         controller: 'ContestantCtrl'
       }).
+      when('/home', {
+        templateUrl: '/partials/home',
+        controller: 'HomeCtrl'
+      }).
       when('/:id', {
         templateUrl: '/partials/contest',
         controller: 'AppCtrl'

@@ -12,7 +12,7 @@ var express = require('express'),
 
 
 var MongoClient = require('mongodb').MongoClient; 
-MongoClient.connect("mongodb://localhost:27017/patternscoring", function(err, db) {
+MongoClient.connect("mongodb://172.17.97.54:27017/patternscoring", function(err, db) {
   if (err != null) {
     console.log('unable to open DB: ' + err);
     process.exit();
@@ -25,6 +25,7 @@ MongoClient.connect("mongodb://localhost:27017/patternscoring", function(err, db
 });
 
 var app = module.exports = express();
+global.app = app;
 /**
  * Configuration
  */
@@ -56,6 +57,7 @@ if (app.get('env') == 'production') {
 
 // serve index and view partials
 app.get('/heartbeat', heartbeat.heartbeat);
+app.get('/home', routes.index);
 app.get('/:id', routes.index);
 //app.get('/contestant/:amaid', routes.index);
 app.get('/partials/:name', routes.partials);
