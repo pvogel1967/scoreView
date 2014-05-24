@@ -31,6 +31,11 @@ angular.module('contest.services', ['ngResource']).
 				});
 			}
 		};
+	}).
+	factory('contestListService', function($resource) {
+		return $resource('/api/contests', {includeTest:false}, {
+			query: { method:'GET', isArray:true}
+		});
 	});
 
 angular.module('contestant.services', ['ngResource']).

@@ -4,8 +4,20 @@
  */
 
 exports.index = function(req, res){
+	console.log("index route start");
   	var id=req.params.id;
-  	if (req.url == '/' || req.url=="") {
+  	console.log("index route.  url=" + req.url);
+  	if (req.url === '/home') {
+  		console.log('render index for /home');
+  		res.render('index');
+  		return;
+  	}
+  	if (req.url === '/' || req.url==="") {
+  		console.log("base URL, app.get('env') = " + global.app.get('env'));
+  		if (global.app.get('env') === 'production') {
+  			res.redirect('/home');
+  			return;
+  		}
   		console.log('no id, going to mongo');
 		global.db.collection('CurrentContest', function(err, contests) {
 			if (err != null) {
@@ -48,5 +60,6 @@ exports.contestant = function(req, res) {
 
 exports.partials = function (req, res) {
   var name = req.params.name;
+  console.log("rendering partials/" + name);
   res.render('partials/' + name);
 };
