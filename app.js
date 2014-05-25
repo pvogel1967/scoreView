@@ -10,9 +10,11 @@ var express = require('express'),
   http = require('http'),
   path = require('path');
 
-
+var app = module.exports = express();
+global.app = app;
 var MongoClient = require('mongodb').MongoClient; 
-MongoClient.connect("mongodb://172.17.97.54:27017/patternscoring", function(err, db) {
+app.set('mongoConnection', process.env.MONGOCONNECTION || "patternscoring:patternscoring@ds047159-a0.mongolab.com:47159");
+MongoClient.connect("mongodb://" + app.get('mongoConnection') + "/patternscoring", function(err, db) {
   if (err != null) {
     console.log('unable to open DB: ' + err);
     process.exit();
@@ -24,8 +26,7 @@ MongoClient.connect("mongodb://172.17.97.54:27017/patternscoring", function(err,
   global.db = db;
 });
 
-var app = module.exports = express();
-global.app = app;
+
 /**
  * Configuration
  */
