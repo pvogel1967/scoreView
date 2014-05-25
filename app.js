@@ -13,7 +13,7 @@ var express = require('express'),
 var app = module.exports = express();
 global.app = app;
 var MongoClient = require('mongodb').MongoClient; 
-app.set('mongoConnection', process.env.MONGOCONNECTION || "patternscoring:patternscoring@ds047159-a0.mongolab.com:47159");
+app.set('mongoConnection', process.env.MONGOCONNECTION || "localhost:27017");
 MongoClient.connect("mongodb://" + app.get('mongoConnection') + "/patternscoring", function(err, db) {
   if (err != null) {
     console.log('unable to open DB: ' + err);
