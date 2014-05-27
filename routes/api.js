@@ -4,56 +4,53 @@
 var http = require('http');
 exports.contestResults = function(req, res)
 {
-global.db.collection('ContestData', function(err, contests) {
-	if (err != null) {
-		res.statusCode = 500;
-		res.end('unable to find contestData collection');
-		console.log(err);
-		return;
-	}
-	if (contests == null) {
-		res.statusCode = 500;
-		res.end('no contestData collection');
-		return;
-	}
-	if (req.method == 'POST') {
-		console.log("got POST of ContestData: " + req.body);
-		res.statusCode = 200;
-		res.end('accepted ContestData, processing');
-		contests.findAndModify({"contestID":req.params.id},
-		[['_id', 'asc']],
-		req.body,
-		{"upsert":true},
-		function(err, result) {
-			if (err != null) {
-				//res.statusCode = "500";
-				//res.end('unable to update contest results for ' + req.params.id);
-				console.log(err);
-				return;
-			}
-			global.io.sockets.emit('contestChanged', req.params.id);
-			//res.json(result);
-		});
-	} else {
-		contests.findOne({"contestID":req.params.id}, function (err, contest) {
-			if (err != null) {
-				res.statusCode = 500;
-				res.end('unable to read contest');
-				console.log(err);
-				return;
-			}
-			if (contest == null) {
-				res.statusCode = 200;
-				res.end('no contest');
-				return;
-			}
-			if (contest.classData[contest.classData.length-1] === null) {
-				contest.classData.pop();
-			}
-			res.json(contest);
-		});
-	}
-});
+	global.db.collection('ContestData', function(err, contests) {
+		if (err != null) {
+			res.statusCode = 500;
+			res.end('unable to find contestData collection');
+			console.log(err);
+			return;
+		}
+		if (contests == null) {
+			res.statusCode = 500;
+			res.end('no contestData collection');
+			return;
+		}
+		if (req.method == 'POST') {
+			console.log("got POST of ContestData: " + req.body);
+			res.statusCode = 200;
+			res.end('accepted ContestData, processing');
+			contests.findAndModify({"contestID":req.params.id},
+				[['_id', 'asc']],
+				req.body,
+				{"upsert":true},
+			function(err, result) {
+				if (err != null) {
+					console.log(err);
+					return;
+				}
+				global.io.sockets.emit('contestChanged', req.params.id);
+			});
+		} else {
+			contests.findOne({"contestID":req.params.id}, function (err, contest) {
+				if (err != null) {
+					res.statusCode = 500;
+					res.end('unable to read contest');
+					console.log(err);
+					return;
+				}
+				if (contest == null) {
+					res.statusCode = 200;
+					res.end('no contest');
+					return;
+				}
+				if (contest.classData[contest.classData.length-1] === null) {
+					contest.classData.pop();
+				}
+				res.json(contest);
+			});
+		}
+	});
 };
 
 function sendToPatternScoring(uri, obj) {
@@ -287,6 +284,35 @@ exports.contestantResults = function(req, res)
 	});
 
 };
+
+exports.contestList = function(req, res) 
+{
+	global.db.collection('ContestData', function(err, contests) {
+		if (err != null) {
+			console.log('unable to update patternScoring.com, could not find ContestData' + err);
+			return;
+		}
+		if (contests == null) {
+			console.log('unable to update patternScoring.com, no contestData collection');
+			return;
+		}
+		var query = {'location':{$not: /test/i}};
+		if (req.query.includeTest == '1') {
+			query = {};
+		}
+		contests.find(query, {'contestID':1,'location':1, 'district':1}).toArray(function (err, contests) {
+			console.log('contestList query callback');
+			if (err != null) {
+				res.statusCode = 500;
+				res.end('error querying contestData collection');
+				console.log(err);
+				return;
+			}
+			res.json(contests);
+		});
+	});
+
+}
 
 exports.opponentAverages = function(req, res)
 {

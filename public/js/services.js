@@ -33,7 +33,7 @@ angular.module('contest.services', ['ngResource']).
 		};
 	}).
 	factory('contestListService', function($resource) {
-		return $resource('/api/contests', {includeTest:false}, {
+		return $resource('/api/contestList', {'includeTest':0}, {
 			query: { method:'GET', isArray:true}
 		});
 	});

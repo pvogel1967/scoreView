@@ -67,6 +67,7 @@ app.get('/partials/:name', routes.partials);
 // JSON API
 app.get('/api/contest/:id', api.contestResults);
 app.post('/api/contest/:id', api.contestResults);
+app.get('/api/contestList', api.contestList);
 app.get('/api/contest/:id/class/:classcode/contestant/:amaid', api.contestantResults);
 app.post('/api/contest/:id/class/:classcode/contestant/:amaid', api.contestantResults);
 

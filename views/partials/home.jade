@@ -8,15 +8,9 @@
 						.panel-heading
 							h3.panel-title Contest scores
 						.panel-body
-							.row
+							.row(ng-repeat="row in contestList")
 								.col-xs-12
-									a(href="/396") Oakdale
-							.row
-								.col-xs-12
-									a(href="/560") Arvin Pattern Bash
-							.row
-								.col-xs-12
-									a(href="/572") SAM 1-day
+									a(href="/{{row.contestID}}") {{row.location}}
 				.row
 					.panel.panel-primary
 						.panel-heading

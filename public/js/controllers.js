@@ -3,6 +3,9 @@
 /* Controllers */
 
 angular.module('myApp.controllers', ['angles']).
+  controller('HomeCtrl', function($scope, $routeParams, contestListService, socket) {
+  	$scope.contestList = contestListService.query({'includeTest':0});
+  }).
   controller('AppCtrl', function ($scope, $routeParams, $window, contestService, socket) {
   	//$http({
   	//		method:'GET', 
