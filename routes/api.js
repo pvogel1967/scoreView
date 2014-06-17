@@ -213,6 +213,8 @@ exports.contestantResults = function(req, res)
 					var scoreCount = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
 					var maneuverAvg = [];
 					var opponentAvg = [];
+					var maneuverKAvg = [];
+					var opponentKAvg = [];
 					var kFactorAvg = [	{"kfactor":1, "tot":0, "count":0},
 										{"kfactor":2, "tot":0, "count":0},
 										{"kfactor":3, "tot":0, "count":0},
@@ -222,6 +224,8 @@ exports.contestantResults = function(req, res)
 					var maneuverNames = [];
 					var sched = result.schedules[s];
 					sched.opponentAverages = opponentAvg;
+					sched.opponentKAverages = opponentAvg;
+					sched.maneuverKAverages = maneuverKAvg;
 					for (var m=0; m<sched.maneuvers.length; m++) {
 						var mTot = 0;
 						var mCount = 0;
@@ -240,6 +244,7 @@ exports.contestantResults = function(req, res)
 							}
 							maneuverAvg[m] = mTot/mCount;
 							maneuverAvg[m] = maneuverAvg[m].toPrecision(3);
+							maneuverKAvg[m] = maneuverAvg[m] * maneuver.kfactor;
 							maneuverNames[m] = m+1;
 						}
 					}
@@ -272,6 +277,7 @@ exports.contestantResults = function(req, res)
 									}
 									opponentAvg[m] = mTot/mCount;
 									opponentAvg[m] = opponentAvg[m].toPrecision(3);
+									opponentKAvg[m] = opponentAvg[m] * maneuver.kfactor;
 								}
 							}
 							sched.opponentAverages = opponentAvg;

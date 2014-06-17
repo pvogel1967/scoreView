@@ -121,7 +121,16 @@ angular.module('myApp.controllers', ['angles']).
 		pointLabelFontSize : 12
 	};
 
-	$scope.radarFn = function(schedule) {
+	$scope.radarKOptions = {
+		scaleOverlay : true,
+		scaleOverride : true,
+		scaleSteps : 10,
+		scaleStepWidth : 1,
+		scaleStartValue : 0,
+		pointLabelFontSize : 12
+	};
+
+	$scope.radarRawFn = function(schedule) {
 		var maneuverNames = [];
 		for (var m=0; m<schedule.maneuverAverages.length; m++) {
 			maneuverNames.push(m+1);
@@ -146,6 +155,33 @@ angular.module('myApp.controllers', ['angles']).
 			]
 		};
 	};
+
+	$scope.radarKfactorFn = function(schedule) {
+		var maneuverNames = [];
+		for (var m=0; m<schedule.maneuverKAverages.length; m++) {
+			maneuverNames.push(m+1);
+		}
+		return {
+			labels : maneuverNames,
+			datasets : [
+				{
+					fillColor : "rgba(0,102,153,0.5)",
+					strokeColor : "rgba(0,102,153,1)",
+					pointColor : "rgba(0,102,153,1)",
+					pointStrokeColor : "#fff",
+					data : schedule.maneuverKAverages
+				},
+				{
+					fillColor : "rgba(220,220,220,0.5)",
+					strokeColor : "rgba(220,220,220,1)",
+					pointColor : "rgba(220,220,220,1)",
+					pointStrokeColor : "#fff",
+					data : schedule.opponentKAverages
+				}
+			]
+		};
+	};
+
 
 
 	$scope.judges = function(schedule) {
@@ -177,8 +213,9 @@ angular.module('myApp.controllers', ['angles']).
 	}
 
 	$scope.winWidth = function() {
-		return $window.innerWidth-100;
+		return ($window.innerWidth-100)/2 - 20;
 	}
+	
 	window.onresize=function() { 
 		$scope.$apply();
 	}
