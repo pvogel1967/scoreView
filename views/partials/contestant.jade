@@ -81,16 +81,16 @@ div(id=main)
 						h4.panel-title Avg by k-Factor
 					.panel-body
 						div(ui-chart="kFactorAverages", data="kFactorAverages(s)", chart-options="kFactorOptions")
-		.row(ng-repeat="s in contestant.schedules")
+		.row
 			.col-sm-6
 				.panel.panel-primary
 					.panel-heading
 						h4.panel-title Avg vs. Top Pilot
 					.panel-body
-						canvas(radarchart, options="radarOptions", data="radarRawFn(s)", width="winWidth()", height="winWidth()")
+						canvas(radarchart, options="radarOptions", data="radarRawFn(contestant.schedules[0])", width="winWidth()", height="winWidth()")
 			.col-sm-6
 				.panel.panel-primary
 					.panel-heading
 						h4.panel-title Avg with KFactor vs. Top Pilot
 					.panel-body
-						canvas(radarchart, options="radarKOptions(s)", data="radarKfactorFn(s)", width="winWidth()", height="winWidth()")
+						canvas(radarchart, options="radarKOptions(contestant.schedules[0])", data="radarKfactorFn(contestant.schedules[0])", width="winWidth()", height="winWidth()")

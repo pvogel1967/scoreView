@@ -224,7 +224,7 @@ exports.contestantResults = function(req, res)
 					var maneuverNames = [];
 					var sched = result.schedules[s];
 					sched.opponentAverages = opponentAvg;
-					sched.opponentKAverages = opponentAvg;
+					sched.opponentKAverages = opponentKAvg;
 					sched.maneuverKAverages = maneuverKAvg;
 					for (var m=0; m<sched.maneuvers.length; m++) {
 						var mTot = 0;
@@ -243,8 +243,9 @@ exports.contestantResults = function(req, res)
 								}
 							}
 							maneuverAvg[m] = mTot/mCount;
-							maneuverAvg[m] = maneuverAvg[m].toPrecision(3);
 							maneuverKAvg[m] = maneuverAvg[m] * maneuver.kfactor;
+							maneuverAvg[m] = maneuverAvg[m].toPrecision(3);
+							maneuverKAvg[m] = maneuverKAvg[m].toPrecision(3);
 							maneuverNames[m] = m+1;
 						}
 					}
@@ -276,8 +277,9 @@ exports.contestantResults = function(req, res)
 										}
 									}
 									opponentAvg[m] = mTot/mCount;
-									opponentAvg[m] = opponentAvg[m].toPrecision(3);
 									opponentKAvg[m] = opponentAvg[m] * maneuver.kfactor;
+									opponentAvg[m] = opponentAvg[m].toPrecision(3);
+									opponentKAvg[m] = opponentKAvg[m].toPrecision(3);
 								}
 							}
 							sched.opponentAverages = opponentAvg;
