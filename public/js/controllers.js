@@ -121,15 +121,6 @@ angular.module('myApp.controllers', ['angles']).
 		pointLabelFontSize : 12
 	};
 
-	$scope.radarKOptions = {
-		scaleOverlay : true,
-		scaleOverride : true,
-		scaleSteps : 10,
-		scaleStepWidth : 1,
-		scaleStartValue : 0,
-		pointLabelFontSize : 12
-	};
-
 	$scope.radarRawFn = function(schedule) {
 		var maneuverNames = [];
 		for (var m=0; m<schedule.maneuverAverages.length; m++) {
@@ -155,6 +146,24 @@ angular.module('myApp.controllers', ['angles']).
 			]
 		};
 	};
+
+	$scope.radarKOptions = function(schedule) {
+		var maxK = 0;
+		for (var m=0; m<schedule.maneuverKAverages.length; m++) {
+			if (schedule[m].kFactor > maxK) {
+				maxK = schedule[m].kfactor;
+			}
+		}
+		return {
+			scaleOverlay : true,
+			scaleOverride : true,
+			scaleSteps : maxK,
+			scaleStepWidth : 1,
+			scaleStartValue : 0,
+			pointLabelFontSize : 12
+		};
+
+	}
 
 	$scope.radarKfactorFn = function(schedule) {
 		var maneuverNames = [];
@@ -215,7 +224,7 @@ angular.module('myApp.controllers', ['angles']).
 	$scope.winWidth = function() {
 		return ($window.innerWidth-100)/2 - 20;
 	}
-	
+
 	window.onresize=function() { 
 		$scope.$apply();
 	}
