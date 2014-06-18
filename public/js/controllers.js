@@ -149,9 +149,9 @@ angular.module('myApp.controllers', ['angles']).
 
 	$scope.radarKOptions = function(schedule) {
 		var maxK = 0;
-		for (var m=0; m<schedule.maneuverKAverages.length; m++) {
-			if (schedule[m].kfactor > maxK) {
-				maxK = schedule[m].kfactor;
+		for (var m=0; m<schedule.maneuvers.length; m++) {
+			if (schedule.maneuvers[m].kfactor > maxK) {
+				maxK = schedule.maneuvers[m].kfactor;
 			}
 		}
 		return {
