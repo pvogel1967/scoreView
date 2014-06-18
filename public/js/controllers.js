@@ -157,7 +157,7 @@ angular.module('myApp.controllers', ['angles']).
 		return {
 			scaleOverlay : true,
 			scaleOverride : true,
-			scaleSteps : maxK,
+			scaleSteps : maxK * 10,
 			scaleStepWidth : 1,
 			scaleStartValue : 0,
 			pointLabelFontSize : 12
