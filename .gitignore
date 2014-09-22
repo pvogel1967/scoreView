@@ -1,2 +1,6 @@
 .elasticbeanstalk/
-node_modules/
+/node_modules/
+/.idea/
+/data/
+/scoreExport/
+/scoreImport/
