@@ -8,7 +8,8 @@ angular.module('myApp', [
   'contest.services',
   'contestant.services',
   'myApp.directives',
-  'angles'
+  'angles',
+    'nvd3'
 ]).
 config(function ($routeProvider, $locationProvider) {
     $locationProvider.html5Mode(true);
