@@ -72,7 +72,7 @@ angular.module('myApp.controllers', ['angles', 'nvd3']).
                 chart: {
                     type: 'discreteBarChart',
                     height: $scope.winWidth() *.75,
-                    //width
+                    //width: $scope.winWidth() *.6667,
                     margin: {
                         top: 20,
                         right: 20,
@@ -108,7 +108,6 @@ angular.module('myApp.controllers', ['angles', 'nvd3']).
             for (var i=0; i< s.maneuverDiff.length; i++) {
                 values[i] = {label: s.maneuverRealNames[i], value: s.maneuverDiff[i]};
             }
-            console.log(values);
             return [
                 {
                     values: values

@@ -20,7 +20,7 @@
 
                     //basic directive configuration
                     scope._config = angular.extend(defaultConfig, scope.config);
-                    scope.options.chart.width = element.parent().width();
+                    scope.options.chart.width =  element[0].parentElement.clientWidth-50;
                     //directive global api
                     scope.api = {
                         // Fully refresh directive
@@ -144,14 +144,15 @@
                                 // Select the current element to add <svg> element and to render the chart in
                                 d3.select(element[0]).append('svg')
                                     .attr('height', scope.options.chart.height)
-                                    .attr('width', scope.options.chart.width)
+                                    .attr('width', element[0].parentElement.clientWidth-50)
                                     .datum(data)
                                     .transition().duration(scope.options.chart['transitionDuration'])
                                     .call(scope.chart);
 
                                 // Set up svg height and width. It is important for all browsers...
                                 d3.select(element[0]).select('svg')[0][0].style.height = scope.options.chart.height + 'px';
-                                d3.select(element[0]).select('svg')[0][0].style.width = scope.options.chart.width + 'px';
+                                d3.select(element[0]).select('svg')[0][0].style.width = (element[0].parentElement.clientWidth-50) * 2 + 'px';
+                                scope.options.chart.width = element[0].parentElement.clientWidth-50;
                                 if (scope.options.chart.type === 'multiChart') scope.chart.update(); // multiChart is not automatically updated
                             }
                         },
