@@ -1,6 +1,5 @@
 var mongoose = require('mongoose');
 var Q = require('q');
-var mdns = require('mdns2');
 var os = require('os')
 var express = require('express'),
     routes = require('./routes'),
@@ -60,6 +59,7 @@ app.use(app.router);
 // development only
 if (app.get('env') == 'development') {
     app.use(express.errorHandler());
+    var mdns = require('mdns2');
 }
 
 // production only
@@ -796,8 +796,10 @@ function processContestData(result, callbackFn) {
                         'MongoPort': "27017",
                         'MongoDB': contest.ContestID
                     };
-                    var ad = mdns.createAdvertisement(mdns.tcp('mongodb'), 27071, {'txtRecord': txtRecord});
-                    ad.start();
+                    if (app.get('env') !== "production") {
+                        var ad = mdns.createAdvertisement(mdns.tcp('mongodb'), 27071, {'txtRecord': txtRecord});
+                        ad.start();
+                    }
                     callbackFn();
                 });
             }).catch(function (error) {

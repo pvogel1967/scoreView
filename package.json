@@ -7,7 +7,6 @@
     "async-foreach": "^0.1.3",
     "http": "0.0.0",
     "js2xmlparser": "^0.1.4",
-    "mdns2": "^2.1.4",
     "mkdirp": "^0.5.0",
     "mongodb": "^1.4.7",
     "mongoose": "^3.8.13",
@@ -20,10 +19,12 @@
     "simple-statistics": "^0.9.0",
     "jade": "^1.7.0"
   },
-  "devDependencies": {},
+  "devDependencies": {
+      "mdns2": "^2.1.4"
+  },
   "scripts": {
     "test": "'"
   },
-  "author": "",
+  "author": "Peter A Vogel",
   "license": "ISC"
 }
