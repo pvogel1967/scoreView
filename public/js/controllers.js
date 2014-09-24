@@ -71,8 +71,7 @@ angular.module('myApp.controllers', ['angles', 'nvd3']).
             return {
                 chart: {
                     type: 'discreteBarChart',
-                    height: $scope.winWidth() *.75,
-                    //width: $scope.winWidth() *.6667,
+                    height: $scope.winWidth() *.5,
                     margin: {
                         top: 20,
                         right: 20,
