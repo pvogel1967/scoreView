@@ -5,7 +5,7 @@ exports.contestResults = function(req, res) {
         console.log('got POST of ContestData');
         res.statusCode = 200;
         res.end('accepted ContestData, processing');
-        var newContestData = JSON.parse(req.body);
+        var newContestData = req.body;
         global.model.contestData.findOneAndUpdate({"contestID": req.params.id}, newContestData,{upsert:true},function(err, updated) {
             if (err !== null) {
                 console.log(err);
@@ -102,7 +102,7 @@ exports.contestantResults = function(req, res) {
         console.dir(req.body);
         res.statusCode = 200;
         res.end('contestantResult received, processing');
-        var newContestantResult = JSON.parse(req.body);
+        var newContestantResult = req.body;
         global.model.contestantResult.findOneAndUpdate({"contestID": req.params.id, "amaNumber": req.params.amaid, "className": req.params.classcode}, newContestantResult, {upsert: true}, function (err, updated) {
             if (err !== null) {
                 console.log(err);
