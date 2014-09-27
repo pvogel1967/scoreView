@@ -98,7 +98,8 @@ exports.contestChange = function(socket)
 
 exports.contestantResults = function(req, res) {
     if (req.method == 'POST') {
-        console.log("got POST of contestantResult: " + req.body);
+        console.log("got POST of contestantResult: ");
+        console.dir(req.body);
         res.statusCode = 200;
         res.end('contestantResult received, processing');
         var newContestantResult = JSON.parse(req.body);
