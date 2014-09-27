@@ -6,6 +6,9 @@ exports.contestResults = function(req, res) {
         res.statusCode = 200;
         res.end('accepted ContestData, processing');
         var newContestData = req.body;
+        delete newContestData['id'];
+        delete newContestData['_id'];
+        console.log("Got ContestData: " + JSON.stringify(newContestData));
         global.model.contestData.findOneAndUpdate({"contestID": req.params.id}, newContestData,{upsert:true},function(err, updated) {
             if (err !== null) {
                 console.log(err);
@@ -71,6 +74,7 @@ exports.updatePatternScoringCom = function updatePatternScoringCom(data) {
             return;
         }
         delete contest['_id'];
+        delete contest['id'];
         sendToPatternScoring('/api/contest/' + data, contest);
         global.model.contestantResult.find({"contestID": data}, function(err, contestants) {
             if (err != null) {
@@ -85,6 +89,7 @@ exports.updatePatternScoringCom = function updatePatternScoringCom(data) {
                 var uri = "/api/contest/" + data + "/class/" + item.className + "/contestant/" + item.amaNumber;
                 console.log('found contestantResult: ' + uri);
                 delete item["_id"];
+                delete item["id"];
                 sendToPatternScoring(uri, item);
             }
         });
@@ -99,7 +104,9 @@ exports.contestChange = function(socket)
 exports.contestantResults = function(req, res) {
     if (req.method == 'POST') {
         console.log("got POST of contestantResult: ");
-        console.dir(req.body);
+        delete req.body['_id'];
+        delete req.body['id'];
+        console.log("Got ContestData: " + JSON.stringify(req.body));
         res.statusCode = 200;
         res.end('contestantResult received, processing');
         var newContestantResult = req.body;
