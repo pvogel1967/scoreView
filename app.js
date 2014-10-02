@@ -86,6 +86,7 @@ app.post('/api/contest/:id', api.contestResults);
 app.get('/api/contestList', api.contestList);
 app.get('/api/contest/:id/class/:classcode/contestant/:amaid', api.contestantResults);
 app.post('/api/contest/:id/class/:classcode/contestant/:amaid', api.contestantResults);
+app.get('/api/addTimestamps', api.addPilotTimeStamp);
 
 // redirect all others to the index (HTML5 history)
 app.get('*', routes.index);

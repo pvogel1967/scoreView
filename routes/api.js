@@ -101,6 +101,71 @@ exports.contestChange = function(socket)
 
 };
 
+exports.contestantAllResults = function(req, res) {
+    console.log("got request for all results for contestant: " + req.params.amaid);
+    global.model.contestantResult.find({"amaNumber": req.params.amaid, "className":req.params.classcode}, function(err, results) {
+        if (err !== null) {
+            res.statusCode = 500;
+            res.end('unable to get all results for ' + req.params.amaid + ' in class ' + req.params.classcode);
+        }
+        var maneuverData = [];
+        var contestManeuverData = [];
+        var maneuverNames = [];
+        var maneuverKFactor = [];
+        var maneuverAvg = [];
+        var maneuverMin = [];
+        var maneuverMax = [];
+        var maneuverRange = [];
+        var maneuverStdDev = [];
+        if (results.count < 1) {
+            res.statusCode = 404;
+            res.end("no results found");
+        }
+        var first = results[0];
+        var sched = first.schedules[0];
+        for (var m = 0; m < sched.maneuvers.length; m++) {
+            maneuverKFactor[m] = maneuver.kfactor;
+            maneuverNames[m] = maneuver.name;
+            maneuverData[m] = [];
+            contestManeuverData[m] = [];
+        }
+        for (var i=0; i<results.count; i++) {
+            var result = results[i];
+            sched = result.schedules[0];
+            for (m = 0; m < sched.maneuvers.length; m++) {
+                var scoreArray = [];
+                var maneuver = sched.maneuvers[m];
+                if (maneuver != null) {
+                    for (var r = 0; r < maneuver.flights.length; r++) {
+                        for (var j = 0; j < maneuver.flights[r].judgeManeuverScores.length; j++) {
+                            var score = maneuver.flights[r].JudgeManeuverScores[j].score;
+                            scoreArray.push(score);
+                            maneuverData[m].push(score);
+                        }
+                    }
+                }
+                contestManeuverData[m].push([i, ss.mean(scoreArray)]);
+            }
+
+        }
+        for (m=0; m<maneuverData.length; m++) {
+            maneuverAvg[m] = ss.mean(maneuverData[m]);
+            maneuverMin[m] = ss.min(maneuverData[m]);
+            maneuverMax[m] = ss.max(maneuverData[m]);
+            maneuverRange[m] = maneuverMax[m] - maneuverMin[m];
+            maneuverStdDev[m] = ss.standard_deviation(maneuverData[m]);
+        }
+        res.json({
+            maneuverData:maneuverData,
+            contestManeuverData:contestManeuverData,
+            maneuverAverage:maneuverAvg,
+            maneuverMin: maneuverMin,
+            maneuverMax: maneuverMax,
+            maneuverRange: maneuverRange,
+            maneuverStdDev: maneuverStdDev
+        });
+    });
+}
 exports.contestantResults = function(req, res) {
     if (req.method == 'POST') {
         console.log("got POST of contestantResult: ");
@@ -241,139 +306,6 @@ exports.contestantResults = function(req, res) {
     }
 };
 
-/*
-exports.contestantResultsOld = function(req, res)
-{
-	global.db.collection('ContestantResult', function(err, results) {
-		if (err != null) {
-			res.statusCode = 500;
-			res.end('unable to find contestantResult collection');
-			console.log(err);
-			return;
-		}
-		if (results == null) {
-			res.statusCode = 500;
-			res.end('no contestantResult collection found');
-			return;
-		}
-		if (req.method == 'POST') {
-			console.log("got POST of contestantResult: " + req.body);
-			res.statusCode = 200;
-			res.end('contestantResult received, processing');
-			results.findAndModify({"contestID":req.params.id, "amaNumber":req.params.amaid, "className":req.params.classcode},
-			[['_id', 'asc']],
-			req.body,
-			{"upsert":true},
-			function(err, result) {
-				if (err != null) {
-					//res.statusCode = "500";
-					//res.end('unable to update contestant results for ' + req.params.amaid);
-					console.log(err);
-					return;
-				}
-				//res.json(result);
-			});
-		} else {
-			results.findOne({"contestID":req.params.id, "amaNumber":req.params.amaid, "className":req.params.classcode}, 
-				function (err, result) {
-				if (err !== null) {
-					res.statusCode = 500;
-					res.end('unable to find contestant detailed results for ' + req.params.amaid);
-					console.log(err);
-					return;
-				}
-				if (result === null && req.method==='GET') {
-					console.log('got empty result');
-					return;
-				}
-				for (var s=0; s<result.schedules.length; s++) {
-					var scoreCount = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
-					var maneuverAvg = [];
-					var opponentAvg = [];
-					var maneuverKAvg = [];
-					var opponentKAvg = [];
-					var kFactorAvg = [	{"kfactor":1, "tot":0, "count":0},
-										{"kfactor":2, "tot":0, "count":0},
-										{"kfactor":3, "tot":0, "count":0},
-										{"kfactor":4, "tot":0, "count":0},
-										{"kfactor":5, "tot":0, "count":0},
-										{"kfactor":6, "tot":0, "count":0}];
-					var maneuverNames = [];
-					var sched = result.schedules[s];
-					sched.opponentAverages = opponentAvg;
-					sched.opponentKAverages = opponentKAvg;
-					sched.maneuverKAverages = maneuverKAvg;
-					for (var m=0; m<sched.maneuvers.length; m++) {
-                        console.log("maneuver: " + m);
-						var mTot = 0;
-						var mCount = 0;
-						var maneuver = sched.maneuvers[m];
-						if (maneuver != null) {
-							for (var r = 0; r<maneuver.flights.length; r++) {
-                                console.log('flight: ' + r);
-								for (var j = 0; j < 2; j++) {
-                                    console.log('judge: ' + j);
-									var score = maneuver.flights[r].JudgeManeuverScores[j].score;
-									scoreCount[score*2]++;
-									var kfAvg = kFactorAvg[maneuver.kfactor-1];
-									kfAvg.tot += score;
-									kfAvg.count++;
-									mTot+=score;
-									mCount++;
-								}
-							}
-							maneuverAvg[m] = mTot/mCount;
-							maneuverKAvg[m] = maneuverAvg[m] * maneuver.kfactor;
-							maneuverAvg[m] = maneuverAvg[m].toPrecision(3);
-							maneuverKAvg[m] = maneuverKAvg[m].toPrecision(3);
-							maneuverNames[m] = m+1;
-						}
-					}
-					console.log("kFactorAvg length = " + kFactorAvg.length);
-					while(kFactorAvg[kFactorAvg.length-1].count == 0) {
-						kFactorAvg.pop();
-						console.log("kFactorAvg length = " + kFactorAvg.length);
-					}
-					sched.maneuverAverages = maneuverAvg;
-					sched.kFactorAverages = kFactorAvg;
-					sched.scoreCount = scoreCount;
-					sched.maneuverNames = maneuverNames;
-					results.findOne({"contestID":req.params.id, "finalPlacement":"1", "className":result.className}, function(err, opponent) {
-						if (err != null) {
-							console.log('unable to find contestant detailed results #1 in class:' + result.className + ' -- err: ' + err);
-						} else if (opponent === null || opponent.schedules===null || opponent.schedules[0] === null || opponent.schedules[0].maneuvers === null) {
-							console.log('got empty results for opponent');
-						} else {
-							for (var m=0; m<opponent.schedules[0].maneuvers.length; m++) {
-								var mTot = 0;
-								var mCount = 0;
-								var maneuver = opponent.schedules[0].maneuvers[m];
-								if (maneuver != null) {
-									for (var r = 0; r<maneuver.flights.length; r++) {
-										for (var j = 0; j < 2; j++) {
-											var score = maneuver.flights[r].JudgeManeuverScores[j].score;
-											mTot+=score;
-											mCount++;
-										}
-									}
-									opponentAvg[m] = mTot/mCount;
-									opponentKAvg[m] = opponentAvg[m] * maneuver.kfactor;
-									opponentAvg[m] = opponentAvg[m].toPrecision(3);
-									opponentKAvg[m] = opponentKAvg[m].toPrecision(3);
-								}
-							}
-							sched.opponentAverages = opponentAvg;
-						}
-						res.json(result);
-					});
-				}
-			});
-		}
-	});
-
-};
-
-*/
 
 exports.contestList = function(req, res) {
     var query = {'location':{$not: /test/i}};
@@ -391,134 +323,26 @@ exports.contestList = function(req, res) {
         res.json(contests);
     });
 };
-/*
-exports.contestListOld = function(req, res)
-{
-	global.db.collection('ContestData', function(err, contests) {
-		if (err != null) {
-			console.log('unable to update patternScoring.com, could not find ContestData' + err);
-			return;
-		}
-		if (contests == null) {
-			console.log('unable to update patternScoring.com, no contestData collection');
-			return;
-		}
-		var query = {'location':{$not: /test/i}};
-		if (req.query.includeTest == '1') {
-			query = {};
-		}
-		contests.find(query, {'contestID':1,'location':1, 'district':1}).toArray(function (err, contests) {
-			console.log('contestList query callback');
-			if (err != null) {
-				res.statusCode = 500;
-				res.end('error querying contestData collection');
-				console.log(err);
-				return;
-			}
-			res.json(contests);
-		});
-	});
 
+exports.addPilotTimeStamp = function(req, res) {
+    global.model.pilot.find({}, function(err, pilots) {
+        if (err != null) {
+            res.statusCode = 500;
+            res.end('error querying for pilots: ' + err);
+            console.log(err);
+            return;
+        }
+        for (var i=0; i<pilots.length; i++) {
+            var pilot = pilots[i];
+            pilot.TimeStamp = new Date;
+            pilot.save(function(err, saved) {
+                if (err !== null) {
+                    console.log('error saving: ' + err);
+                } else {
+                    console.log('saved: ');
+                }
+            });
+        }
+        res.json(pilots);
+    });
 }
-*/
-
-/*
-exports.opponentAverages = function(req, res)
-{
-	global.db.collection('ContestantResult', function(err, results) {
-		if (err != null) {
-			res.statusCode = 500;
-			res.end('unable to find contestantResult collection');
-			console.log(err);
-			return;
-		}
-		if (results == null) {
-			res.statusCode = 500;
-			res.end('no contestantResult collection found');
-			return;
-		}
-		results.findOne({"contestID":req.params.id, "amaNumber":req.params.amaid}, function (err, result) {
-			if (err != null) {
-				res.statusCode = 500;
-				res.end('unable to find contestant detailed results for ' + req.params.amaid);
-				console.log(err);
-				return;
-			}
-			if (result == null) {
-				console.log('got empty result');
-				return;
-			}
-			for (var s=0; s<result.schedules.length; s++) {
-				var scoreCount = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
-				var maneuverAvg = [];
-				var opponentAvg = [];
-				var kFactorAvg = [	{"kfactor":1, "tot":0, "count":0},
-									{"kfactor":2, "tot":0, "count":0},
-									{"kfactor":3, "tot":0, "count":0},
-									{"kfactor":4, "tot":0, "count":0},
-									{"kfactor":5, "tot":0, "count":0},
-									{"kfactor":6, "tot":0, "count":0}];
-				var maneuverNames = [];
-				var sched = result.schedules[s];
-				sched.opponentAverages = opponentAvg;
-				for (var m=0; m<sched.maneuvers.length; m++) {
-					var mTot = 0;
-					var mCount = 0;
-					var maneuver = sched.maneuvers[m];
-					if (maneuver != null) {
-						for (var r = 0; r<maneuver.flights.length; r++) {
-							for (var j = 0; j < 2; j++) {
-								var score = maneuver.flights[r].JudgeManeuverScores[j].score;
-								scoreCount[score*2]++;
-								var kfAvg = kFactorAvg[maneuver.kfactor-1];
-								kfAvg.tot += score;
-								kfAvg.count++;
-								mTot+=score;
-								mCount++;
-							}
-						}
-						maneuverAvg[m] = mTot/mCount;
-						maneuverAvg[m] = maneuverAvg[m].toPrecision(3);
-						maneuverNames[m] = m+1;
-					}
-				}
-				while(kFactorAvg[kFactorAvg.length-1].count == 0) {
-					kFactorAvg.pop();
-				}
-				sched.maneuverAverages = maneuverAvg;
-				sched.kFactorAverages = kFactorAvg;
-				sched.scoreCount = scoreCount;
-				sched.maneuverNames = maneuverNames;
-				results.findOne({"contestID":req.params.id, "finalPlacement":"1", "className":result.className}, function(err, opponent) {
-					if (err != null) {
-						console.log('unable to find contestant detailed results #1 in class:' + result.className + ' -- err: ' + err);
-					} else if (opponent === null || opponent.schedules===null || opponent.schedules[0] === null || opponent.schedules[0].maneuvers === null) {
-						console.log('got empty results for opponent');
-					} else {
-						for (var m=0; m<opponent.schedules[0].maneuvers.length; m++) {
-							var mTot = 0;
-							var mCount = 0;
-							var maneuver = opponent.schedules[0].maneuvers[m];
-							if (maneuver != null) {
-								for (var r = 0; r<maneuver.flights.length; r++) {
-									for (var j = 0; j < 2; j++) {
-										var score = maneuver.flights[r].JudgeManeuverScores[j].score;
-										mTot+=score;
-										mCount++;
-									}
-								}
-								opponentAvg[m] = mTot/mCount;
-								opponentAvg[m] = opponentAvg[m].toPrecision(3);
-							}
-						}
-						sched.opponentAverages = opponentAvg;
-					}
-					res.render('contestant', {'contestant':result});
-				});
-			}
-		});
-	});
-
-};
-
-    */
