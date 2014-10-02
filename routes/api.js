@@ -102,8 +102,8 @@ exports.contestChange = function(socket)
 };
 
 exports.contestantAllResults = function(req, res) {
-    console.log("got request for all results for contestant: " + req.params.amaid);
-    global.model.contestantResult.find({"amaNumber": req.params.amaid, "className":req.params.classcode}, function(err, results) {
+    console.log("got request for all results for contestant: " + req.params.amaid + " in class: " + req.params.classcode);
+    model.contestantResult.find({"amaNumber": req.params.amaid, "className":req.params.classcode}, function(err, results) {
         if (err !== null) {
             res.statusCode = 500;
             res.end('unable to get all results for ' + req.params.amaid + ' in class ' + req.params.classcode);
@@ -117,6 +117,9 @@ exports.contestantAllResults = function(req, res) {
         var maneuverMax = [];
         var maneuverRange = [];
         var maneuverStdDev = [];
+        var allScores = [];
+        var maneuverLRm = [];
+        var maneuverLRb = [];
         if (results.count < 1) {
             res.statusCode = 404;
             res.end("no results found");
@@ -124,27 +127,31 @@ exports.contestantAllResults = function(req, res) {
         var first = results[0];
         var sched = first.schedules[0];
         for (var m = 0; m < sched.maneuvers.length; m++) {
+            var maneuver = sched.maneuvers[m];
             maneuverKFactor[m] = maneuver.kfactor;
             maneuverNames[m] = maneuver.name;
             maneuverData[m] = [];
             contestManeuverData[m] = [];
         }
-        for (var i=0; i<results.count; i++) {
+        for (var i=0; i<results.length; i++) {
             var result = results[i];
             sched = result.schedules[0];
-            for (m = 0; m < sched.maneuvers.length; m++) {
-                var scoreArray = [];
-                var maneuver = sched.maneuvers[m];
-                if (maneuver != null) {
-                    for (var r = 0; r < maneuver.flights.length; r++) {
-                        for (var j = 0; j < maneuver.flights[r].judgeManeuverScores.length; j++) {
-                            var score = maneuver.flights[r].JudgeManeuverScores[j].score;
-                            scoreArray.push(score);
-                            maneuverData[m].push(score);
+            if (sched !== undefined && sched !== null) {
+                for (m = 0; m < sched.maneuvers.length; m++) {
+                    var scoreArray = [];
+                    var maneuver = sched.maneuvers[m];
+                    if (maneuver != null) {
+                        for (var r = 0; r < maneuver.flights.length; r++) {
+                            for (var j = 0; j < maneuver.flights[r].JudgeManeuverScores.length; j++) {
+                                var score = maneuver.flights[r].JudgeManeuverScores[j].score;
+                                scoreArray.push(score);
+                                allScores.push(score);
+                                maneuverData[m].push(score);
+                            }
                         }
                     }
+                    contestManeuverData[m].push([i, ss.mean(scoreArray)]);
                 }
-                contestManeuverData[m].push([i, ss.mean(scoreArray)]);
             }
 
         }
@@ -154,17 +161,27 @@ exports.contestantAllResults = function(req, res) {
             maneuverMax[m] = ss.max(maneuverData[m]);
             maneuverRange[m] = maneuverMax[m] - maneuverMin[m];
             maneuverStdDev[m] = ss.standard_deviation(maneuverData[m]);
+            var lr = ss.linear_regression()
+                .data(contestManeuverData[m]);
+            maneuverLRm[m] = lr.m();
+            maneuverLRb[m] = lr.b();
         }
         res.json({
-            maneuverData:maneuverData,
-            contestManeuverData:contestManeuverData,
-            maneuverAverage:maneuverAvg,
-            maneuverMin: maneuverMin,
-            maneuverMax: maneuverMax,
-            maneuverRange: maneuverRange,
-            maneuverStdDev: maneuverStdDev
+            'overallAvg':ss.mean(allScores),
+            'maneuverNames':maneuverNames,
+            'maneuverKFactor':maneuverKFactor,
+            'maneuverData':maneuverData,
+            'contestManeuverData':contestManeuverData,
+            'maneuverAverage':maneuverAvg,
+            'maneuverMin': maneuverMin,
+            'maneuverMax': maneuverMax,
+            'maneuverRange': maneuverRange,
+            'maneuverStdDev': maneuverStdDev,
+            'maneuverLRm' : maneuverLRm,
+            'maneuverLRb' : maneuverLRb
         });
     });
+
 }
 exports.contestantResults = function(req, res) {
     if (req.method == 'POST') {
