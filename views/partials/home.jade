@@ -10,7 +10,7 @@
                         .panel-body
                             .row(ng-repeat="row in contestList")
                                 .col-xs-12
-                                    a(href="/{{row.contestID}}") {{(row.name !== undefined && row.name !== null) ? row.name : row.location}}
+                                    a(href="/{{row.contestID}}") {{contestName(row)}}
                 .row
                     .panel.panel-primary
                         .panel-heading

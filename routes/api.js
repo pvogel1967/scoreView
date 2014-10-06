@@ -382,7 +382,7 @@ exports.contestList = function(req, res) {
     if (req.query.includeTest == '1') {
         query = {};
     }
-    global.model.contestData.find(query, 'contestID location district', function(err, contests) {
+    global.model.contestData.find(query, 'contestID location district contestName', function(err, contests) {
         console.log('contestList query callback');
         if (err != null) {
             res.statusCode = 500;

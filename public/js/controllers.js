@@ -5,6 +5,13 @@
 angular.module('myApp.controllers', ['angles', 'nvd3']).
     controller('HomeCtrl', function($scope, $routeParams, contestListService, socket) {
         $scope.contestList = contestListService.query({'includeTest':0});
+        $scope.contestName = function(contest) {
+            if (contest.contestName !== null && contest.contestName !== undefined) {
+                return contest.contestName;
+            } else {
+                return contest.location;
+            }
+        }
     }).
     controller('AppCtrl', function ($scope, $routeParams, $window, contestService, socket) {
         $scope.contestData = contestService.query({contestId:$routeParams.id});
