@@ -10,7 +10,7 @@
 						.panel-body
 							.row(ng-repeat="row in contestList")
 								.col-xs-12
-									a(href="/{{row.contestID}}") {{row.location}}
+									a(href="/{{row.contestID}}") {{(row.name !== undefined && row.name !== null) ? row.name : row.location}}
 				.row
 					.panel.panel-primary
 						.panel-heading
@@ -19,6 +19,7 @@
 							.row
 								.col-xs-12
 									a(href="https://www.dropbox.com/s/oldwovalte78ysj/PatternScoringSetup.exe", download="setup.exe") D7/D8 scoring app
+                                    a(href="http://amapatternscore.blob.core.windows.net/clickonce/setup.exe", download="setup.exe") MasterScoring app
 		.col-lg-10.col-md-10.col-sm-8.col-xs-12
 			.panel.panel-primary
 				.panel-heading
@@ -38,12 +39,18 @@
 						.col-lg-4.col-md-4.col-sm-7.col-xs-11
 							img(src="/img/scoreController.png")
 					p 
-						| At the moment, the only supported scoring application is the D7/D8 scoring app originally written by Gordon Anderson of D8 as a 
+						| At the moment, the only fully supported scoring application is the D7/D8 scoring app originally written by Gordon Anderson of D8 as a
 						| VB6 macro-based plugin to Excel and rewritten as a C# Visual Studio Tools for Office (VSTO) plugin to Excel by Peter Vogel of D7. 
 						| Click 
 						a(href="https://www.dropbox.com/s/oldwovalte78ysj/PatternScoringSetup.exe", download="setup.exe") here 
 						| to download a windows installer for the D7/D8 scoring app.
-						| We look forward to supporting other systems like PACSS and MasterScoring in the near future.
+                    p
+                        | Working with Scott Smith, we've built an adapter that runs alongside the MasterScoring app to deliver
+                        | electronic-scribe based scoring using
+                        a(href="http://amapatternscore.blob.core.windows.net/clickonce/setup.exe") MasterScoring
+                        | to manage the contest.  At the moment, this requires some manual
+                        | setup that Peter hasn't had a chance to build an installer, so if you are interested in using MasterScoring, please
+                        | contact Peter Vogel directly.
 					h3 Why?
 					p 
 						| The first question that comes to many pilots is "why?"  Why change the paper-based scoring system we've been using for years? 
