@@ -151,7 +151,7 @@ var contestDataSchema = new Schema({
             actualScore: Number,
             percentOfPossible: Number,
             scoringData: [ {
-                flightNumber: Number,
+                flightNumber: String,
                 normalizedScore: Number,
                 rawScore: Number,
                 possibleScore: Number,

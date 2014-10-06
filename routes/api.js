@@ -62,7 +62,62 @@ function sendToPatternScoring(uri, obj) {
 	req.end();
 };
 
+function scrubContestData(contest) {
+    delete contest['_id'];
+    delete contest['__v'];
+    for (var i=0; i<contest.classData.length; i++) {
+        var classData = contest.classData[i];
+        delete classData['_id'];
+        delete classData['__v'];
+        for (var j=0; j<classData.contestants.length; j++) {
+            var contestant = classData.contestants[j];
+            delete contestant['_id'];
+            delete contestant['__v'];
+            for (var k=0; k<contestant.scoringData.length; k++) {
+                delete contestant.scoringData[k]['_id'];
+                delete contestant.scoringData[k]['__v'];
+            }
+        }
+    }
+    return contest;
+}
 
+function scrubContestantData(contestant) {
+    delete contestant['_id'];
+    delete contestant['__v'];
+    for (var i=0; i<contestant.schedules.length; i++) {
+        var sched = contestant.schedules[i];
+        delete sched['_id'];
+        delete sched['__v'];
+        for (var j=0; j<sched.maneuvers.length; j++) {
+            var maneuver = sched.maneuvers[j];
+            delete maneuver['_id'];
+            delete maneuver['__v'];
+            for (var k=0; k<maneuver.flights.length; k++) {
+                var flight = maneuver.flights[k];
+                delete flight['_id'];
+                delete flight['__v'];
+                for (var s=0; s<flight.JudgeManeuverScores.length; s++) {
+                    delete flight.JudgeManeuverScores[s]['_id'];
+                    delete flight.JudgeManeuverScores[s]['__v'];
+                }
+            }
+        }
+        for (j=0; j<sched.subTotals.length; j++) {
+            delete sched.subTotals[j]['_id'];
+            delete sched.subTotals[j]['__v'];
+        }
+        for (j=0; j<sched.flightAverages.length; j++) {
+            delete sched.flightAverages[j]['_id'];
+            delete sched.flightAverages[j]['__v'];
+        }
+        for (j=0; j<sched.percentages.length; j++) {
+            delete sched.percentages[j]['_id'];
+            delete sched.percentages[j]['__v'];
+        }
+    }
+    return contestant;
+}
 exports.updatePatternScoringCom = function updatePatternScoringCom(data) {
     global.model.contestData.findOne({"contestID": data}, function(err, contest) {
         if (err != null) {
@@ -73,8 +128,7 @@ exports.updatePatternScoringCom = function updatePatternScoringCom(data) {
             console.log('unable to update patternScoring.com, cannot find contest: ' + data);
             return;
         }
-        delete contest['_id'];
-        delete contest['id'];
+        contest = scrubContestData(contest.toObject());
         sendToPatternScoring('/api/contest/' + data, contest);
         global.model.contestantResult.find({"contestID": data}, function(err, contestants) {
             if (err != null) {
@@ -88,8 +142,7 @@ exports.updatePatternScoringCom = function updatePatternScoringCom(data) {
                 var item = contestants[i];
                 var uri = "/api/contest/" + data + "/class/" + item.className + "/contestant/" + item.amaNumber;
                 console.log('found contestantResult: ' + uri);
-                delete item["_id"];
-                delete item["id"];
+                item = scrubContestantData(item.toObject());
                 sendToPatternScoring(uri, item);
             }
         });

@@ -126,16 +126,17 @@ if (process.argv.length < 3) {
         var importDir = process.argv[3];
         processContestFile(contestFile, startServer);
         var Gaze = require('gaze').Gaze;
+        console.log('import: ' + importDir + '/contestResults.json');
         var fd = fs.openSync(importDir + '/contestResults.json', 'w');
         fs.closeSync(fd);
-        var gaze = new Gaze(importDir +'/contestResults.json');
+        var gaze = new Gaze('contestResults.json', {'debounceDelay':0, 'mode':'poll', cwd:importDir});
 
 // Files have all started watching
         gaze.on('ready', function(watcher) { console.log('ready, watching '+ importDir + '/contestResults.json') });
 
         gaze.on('all', function(event, filepath) {
             var promises = [];
-            if (event === 'changed') {
+            if (event === 'changed' || event==='added') {
                 processContestResultsData(filepath, promises);
             }
         });
@@ -281,7 +282,7 @@ function processContestResultsData(filepath, promises) {
             var tmp = new model.contestData(contestData);
             //var deferred = Q.defer();
             tmp.save(function (err, contestData) {
-                console.log('saved contestData');
+                console.log('saved contestData err=' + err);
                 walkImportDir();
             });
             //promises.push(deferred.promise);
@@ -690,8 +691,8 @@ function processContestData(result, callbackFn) {
                 //console.log('processing person: ' + person.ID[0]);
                 var amaNumber = person.AMANumber[0];
                 if (person.JudgeNumber !== null && person.JudgeNumber !== undefined) {
-                    judgeMap[person.ID[0]] = person.JudgeNumber[0];
-                    judgeNumToPersonId[person.JudgeNumber] = person.ID[0];
+                    //judgeMap[person.ID[0]] = person.JudgeNumber[0];
+                    //judgeNumToPersonId[person.JudgeNumber] = person.ID[0];
                 }
                 var promise = findPilotByAMA(amaNumber, person);
                 promise.then(function (result) {
@@ -753,13 +754,15 @@ function processContestData(result, callbackFn) {
                 //console.log('judgeMap');
                 //console.dir(judgeMap);
                 for (var i = 0; i < result.ContestData.Contestant.length; i++) {
-                    var contestant = result.ContestData.Contestant[i]
-                    var promise = findContestantByJudgeNum(judgeMap[contestant.PersonID[0]], contestant);
+                    var contestant = result.ContestData.Contestant[i];
+                    var promise = findContestantByJudgeNum(contestant.ContestantNumber[0], contestant);
                     promise.then(function (findResult) {
                         var existingContestant = findResult.contestant;
                         var contestant = findResult.data;
                         if (existingContestant !== null && existingContestant !== undefined) {
-                            //console.log('found contestant for judgeNum:' + existingContestant.JudgeNumber);
+                            console.log('found contestant for judgeNum:' + existingContestant.JudgeNumber);
+                            judgeNumToPersonId[existingContestant.JudgeNumber] = contestant.PersonID[0];
+                            contestantNumToContestantId[existingContestant.JudgeNumber] = existingContestant.MasterScoreID;
                             return;
                         }
                         var newContestant = new model.contestant;
@@ -769,7 +772,8 @@ function processContestData(result, callbackFn) {
                             newContestant.Name = pilot.Name;
                             newContestant.AMANumber = pilot.AMA;
                             newContestant.ContestID = contest.ContestID;
-                            newContestant.JudgeNumber = judgeMap[contestant.PersonID[0]];
+                            newContestant.JudgeNumber = contestant.ContestantNumber[0];
+                            judgeNumToPersonId[newContestant.JudgeNumber] = contestant.PersonID[0];
                             newContestant.MasterScoreID = contestant.ID[0];
                             contestantNumToContestantId[newContestant.JudgeNumber] = newContestant.MasterScoreID;
                             var actualClassID = contestClassToClassMap[contestant.ContestClassID[0]];
