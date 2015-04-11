@@ -56,17 +56,69 @@ app.use(express.methodOverride());
 app.use(express.static(path.join(__dirname,'public')));
 app.use(app.router);
 
-// development only
-if (app.get('env') == 'development') {
-    app.use(express.errorHandler());
-    var mdns = require('mdns2');
-}
 
 // production only
 if (app.get('env') == 'production') {
     // TODO
+} else {
+    app.use(express.errorHandler());
+    var mdns = require('mdns2');
 }
 
+var judgeScoresSaved = function (req, res) {
+    var className = req.params.className;
+    var contestantNum = req.params.contestantNum;
+    var round = req.params.round;
+    var judgeNum = req.params.judgeNum;
+    var data = {
+        'className':className,
+        'contestant':contestantNum,
+        'round':round,
+        'judgeId':judgeNum
+    }
+    console.dir(data);
+    var promise = findExistingScoreMatrix(className, contestantNum, round);
+    promise.then(function (scoreMatrix) {
+        var promise2 = findScoreMatrixRows(scoreMatrix);
+        promise2.then(function (rows) {
+            var promise3 = findJudgeScoresForMatrix(scoreMatrix, judgeNum);
+            promise3.then(function (scores) {
+                var MasterScoreImport = {};
+                MasterScoreImport['@'] = {'contestId': contestId};
+                MasterScoreImport.Contestant = {'@': {'id': contestantNumToContestantId[contestantNum], 'flightNumber': round}};
+                MasterScoreImport.Contestant.Judge = {'@': {'personId': judgeNumToPersonId[judgeNum]}};
+                MasterScoreImport.Contestant.Judge.Maneuver = [];
+                console.log('got ' + scores.length + ' scores');
+                for (i = 0; i < scores.length; i++) {
+                    if (rows[i] !== undefined && rows[i] !== null && scores[i] !== undefined && scores[i] !== null) {
+                        var maneuver = {'@': {'id': rows[i].MasterScoreID, 'score': scores[i].Score}};
+                        MasterScoreImport.Contestant.Judge.Maneuver.push(maneuver);
+                    }
+                }
+                var fileName = exportDir + '/' + className + '-' + contestantNum + '-' + round + '-' + judgeNum + '.xml';
+                var tmpFile = fileName + ".tmp";
+                fs.writeFile(tmpFile, js2xml('MasterScoreImport', MasterScoreImport), function (err) {
+                    if (err) {
+                        console.log('problem writing XML for scores: ' + err);
+                    } else {
+                        fs.rename(tmpFile, fileName, function (err) {
+                            if (err) {
+                                console.log('problem renaming to ' + fileName);
+                            } else {
+                                console.log('export file written to ' + fileName);
+                            }
+                        });
+                    }
+                });
+                console.log();
+            }).catch(function (error) {
+                console.log('error getting judgeScores: ' + error);
+            });
+
+        });
+    });
+    res.json(data);
+};
 
 /**
  * Routes
@@ -80,10 +132,12 @@ app.get('/:id', routes.index);
 app.get('/partials/:name', routes.partials);
 //app.get('/:id/contestant/:amaid', routes.contestant);
 
+
 // JSON API
 app.get('/api/contest/:id', api.contestResults);
 app.post('/api/contest/:id', api.contestResults);
 app.get('/api/contestList', api.contestList);
+app.get('/api/judgeScoresSaved/:className/:contestantNum/:round/:judgeNum', judgeScoresSaved);
 app.get('/api/contest/:id/class/:classcode/contestant/:amaid', api.contestantResults);
 app.post('/api/contest/:id/class/:classcode/contestant/:amaid', api.contestantResults);
 app.get('/api/addTimestamps', api.addPilotTimeStamp);
@@ -156,7 +210,8 @@ function startServer() {
         });
 
         socket.on('judgeScoresSaved', function judgeScoresSaved(data) {
-            console.log('got judgeScoresSaved');
+            console.dir(data);
+            console.log('got judgeScoresSaved ' + data.className + " " + data.contestant + " " + data.round + " " + data.judgeId);
             socket.broadcast.emit('judgeScoresSaved', data);
             if (! adapterMode) {
                 return;
@@ -164,6 +219,7 @@ function startServer() {
             var className = data.className;
             var contestantNum = data.contestant;
             var round = data.round;
+            console.log('got judgeScoresSaved');
             var judgeNum = data.judgeId;
             var promise = findExistingScoreMatrix(className, contestantNum, round);
             promise.then(function(scoreMatrix) {
@@ -529,7 +585,8 @@ function createMatricesForContestant(contest, contestant, className) {
 	var compClass = classNameMap[className];
 	if (compClass === null || compClass === undefined) {
 		console.log('Could not find class for name: ' + className);
-	}var classID = classNameToIDMap[className];
+	}
+    var classID = classNameToIDMap[className];
     var roundCount = classRoundCount[classID];
 	for (var i = 1; i <= roundCount; i++) {
         (function (i) {
@@ -763,6 +820,7 @@ function processContestData(result, callbackFn) {
                             console.log('found contestant for judgeNum:' + existingContestant.JudgeNumber);
                             judgeNumToPersonId[existingContestant.JudgeNumber] = contestant.PersonID[0];
                             contestantNumToContestantId[existingContestant.JudgeNumber] = existingContestant.MasterScoreID;
+                            createMatricesForContestant(contest, exitingContestant, existingContestant.Class);
                             return;
                         }
                         var newContestant = new model.contestant;

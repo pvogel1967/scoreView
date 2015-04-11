@@ -44,6 +44,7 @@ var competitionClassSchema = new Schema({
         }]
     }
 }, {collection:'CompetitionClass'});
+competitionClassSchema.index({Name:1});
 exports.competitionClass = mongoose.model('CompetitionClass', competitionClassSchema);
 
 var contestantSchema = new Schema({
@@ -58,6 +59,9 @@ var contestantSchema = new Schema({
     Frequency: String,
     MasterScoreID: String
 }, {collection:'Contestant'});
+contestantSchema.index({ContestID:1});
+contestantSchema.index({ContestID:1,Class:1});
+contestantSchema.index({JudgeNumber:1});
 exports.contestant = mongoose.model('Contestant', contestantSchema);
 
 var judgeScoreSchema = new Schema({
@@ -68,6 +72,8 @@ var judgeScoreSchema = new Schema({
     Score: Number,
     IsNotObserved: Boolean
 }, {collection:'JudgeScore'});
+//judgeScoreSchema.index({ScoreMatix:1, JudgeId:1});
+//judgeScoreSchema.index({ScoreMatix:1, JudgeId:1, SequenceOrder:1});
 exports.judgeScore = mongoose.model('JudgeScore', judgeScoreSchema);
 
 var scoreMatrixSchema = new Schema({
@@ -93,6 +99,8 @@ var scoreMatrixSchema = new Schema({
     JudgeNumber1: Number,
     JudgeNumber2: Number
 }, {collection:'ScoreMatrix'});
+scoreMatrixSchema.index({ContestID:1,Class:1,Round:1,ContestantID:1});
+scoreMatrixSchema.index({Class:1,ContestantID:1,Round:1});
 exports.scoreMatrix = mongoose.model('ScoreMatrix', scoreMatrixSchema);
 
 var scoreMatrixRowSchema = new Schema({
@@ -108,6 +116,8 @@ var scoreMatrixRowSchema = new Schema({
     Judge1ScoreObject: Schema.Types.Mixed,
     Judge2ScoreObject: Schema.Types.Mixed
 }, {collection:'ScoreMatrixRow'});
+scoreMatrixRowSchema.index({ScoreMatrix:1,Order:1});
+scoreMatrixRowSchema.index({ScoreMatrix:1});
 exports.scoreMatrixRow = mongoose.model('ScoreMatrixRow', scoreMatrixRowSchema);
 
 var pilotSchema = new Schema({
@@ -128,6 +138,7 @@ var pilotSchema = new Schema({
     Frequency: String,
     ExternalKey: String
 }, {collection:'Pilot'});
+pilotSchema.index({AMA:1});
 exports.pilot = mongoose.model('Pilot', pilotSchema);
 
 
@@ -161,6 +172,7 @@ var contestDataSchema = new Schema({
         }]
     }]
 }, {collection:'ContestData'});
+contestDataSchema.index({contestID:1});
 exports.contestData = mongoose.model('ContestData', contestDataSchema);
 
 var contestantResultSchema = new Schema({
@@ -194,4 +206,7 @@ var contestantResultSchema = new Schema({
         percentages:[{score:String}]
     }]
 },{collection:'ContestantResult'});
+contestantResultSchema.index({contestID:1, amaNumber:1});
+contestantResultSchema.index({contestID: 1, amaNumber:1, className:1});
+contestantResultSchema.index({amaNumber:1, className:1});
 exports.contestantResult = mongoose.model('ContestantResult', contestantResultSchema);

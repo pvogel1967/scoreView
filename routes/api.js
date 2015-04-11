@@ -1,5 +1,61 @@
 var http = require('http');
 var ss=require('simple-statistics');
+
+exports.judgeScoresSaved = function (req, res) {
+    var className = req.params.className;
+    var contestantNum = req.params.contestantNum;
+    var round = req.params.round;
+    var judgeNum = req.params.judgeNum;
+    var data = {
+        'className':className,
+        'contestant':contestantNum,
+        'round':round,
+        'judgeId':judgeNum
+    }
+    console.dir(data);
+    var promise = findExistingScoreMatrix(className, contestantNum, round);
+    promise.then(function (scoreMatrix) {
+        var promise2 = findScoreMatrixRows(scoreMatrix);
+        promise2.then(function (rows) {
+            var promise3 = findJudgeScoresForMatrix(scoreMatrix, judgeNum);
+            promise3.then(function (scores) {
+                var MasterScoreImport = {};
+                MasterScoreImport['@'] = {'contestId': contestId};
+                MasterScoreImport.Contestant = {'@': {'id': contestantNumToContestantId[contestantNum], 'flightNumber': round}};
+                MasterScoreImport.Contestant.Judge = {'@': {'personId': judgeNumToPersonId[judgeNum]}};
+                MasterScoreImport.Contestant.Judge.Maneuver = [];
+                console.log('got ' + scores.length + ' scores');
+                for (i = 0; i < scores.length; i++) {
+                    if (rows[i] !== undefined && rows[i] !== null && scores[i] !== undefined && scores[i] !== null) {
+                        var maneuver = {'@': {'id': rows[i].MasterScoreID, 'score': scores[i].Score}};
+                        MasterScoreImport.Contestant.Judge.Maneuver.push(maneuver);
+                    }
+                }
+                var fileName = exportDir + '/' + className + '-' + contestantNum + '-' + round + '-' + judgeNum + '.xml';
+                var tmpFile = fileName + ".tmp";
+                fs.writeFile(tmpFile, js2xml('MasterScoreImport', MasterScoreImport), function (err) {
+                    if (err) {
+                        console.log('problem writing XML for scores: ' + err);
+                    } else {
+                        fs.rename(tmpFile, fileName, function (err) {
+                            if (err) {
+                                console.log('problem renaming to ' + fileName);
+                            } else {
+                                console.log('export file written to ' + fileName);
+                            }
+                        });
+                    }
+                });
+                console.log();
+            }).catch(function (error) {
+                console.log('error getting judgeScores: ' + error);
+            });
+
+        });
+    });
+    res.json(data);
+};
+
 exports.contestResults = function(req, res) {
     if (req.method == 'POST') {
         console.log('got POST of ContestData');
@@ -51,15 +107,19 @@ function sendToPatternScoring(uri, obj) {
     };
 
     console.log('POSTing to http://www.patternscoring.com' + uri + ": " + data);
-	var req = http.request(options, function(res) {
-	    res.setEncoding('utf8');
-	    res.on('data', function (chunk) {
-	        console.log("response from patternScoring: " + chunk);
-	    });
-	});
+    try {
+        var req = http.request(options, function (res) {
+            res.setEncoding('utf8');
+            res.on('data', function (chunk) {
+                console.log("response from patternScoring: " + chunk);
+            });
+        });
 
-	req.write(data);
-	req.end();
+        req.write(data);
+        req.end();
+    } catch(err) {
+        console.log('Error saving to patternScoring: ' + err);
+    }
 };
 
 function scrubContestData(contest) {
@@ -253,19 +313,20 @@ exports.contestantResults = function(req, res) {
     } else {
         console.log('got request for contestant results: {"contestID":"' + req.params.id + '","amaNumber":"'+ req.params.amaid + '","className":"' + req.params.classcode +'"}');
         global.model.contestantResult.findOne({"contestID":req.params.id, "amaNumber":req.params.amaid, "className":req.params.classcode}, function(err, res1) {
-            var result = res1.toObject();
             if (err !== null) {
                 res.statusCode = 500;
                 res.end('unable to find contestant detailed results for ' + req.params.amaid);
                 console.log(err);
                 return;
             }
-            if (result === null && req.method==='GET') {
+
+            if (res1 === null && req.method==='GET') {
                 console.log('got empty result');
                 res.statusCode = 200;
                 res.end('no results');
                 return;
             }
+            var result = res1.toObject();
             for (var s=0; s<result.schedules.length; s++) {
                 (function(s) {
                     var scoreCount = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];

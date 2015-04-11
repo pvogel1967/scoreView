@@ -1,0 +1,17 @@
+27 Sep 15:37:57 - [33m[nodemon] v1.0.17[39m
+27 Sep 15:37:57 - [33m[nodemon] to restart at any time, enter `rs`[39m
+27 Sep 15:37:57 - [33m[nodemon] watching: *.*[39m
+27 Sep 15:37:57 - [32m[nodemon] starting `node app.js`[39m
+MongoConnection: mongodb://localhost:27017/patternscoring
+opened database: mongodb://localhost:27017/patternscoring
+info: socket.io started
+mdns started for http
+Express server listening on port 80
+debug: client authorized
+info: handshake authorized 7prfgFTi7GsEzWbdQ3J-
+debug: setting request GET /socket.io/1/websocket/7prfgFTi7GsEzWbdQ3J-
+debug: set heartbeat interval for client 7prfgFTi7GsEzWbdQ3J-
+debug: client authorized for 
+debug: websocket writing 1::
+got socket connection
+Terminate batch job (Y/N)? 
