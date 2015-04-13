@@ -11,6 +11,11 @@ exports.index = function(req, res) {
         console.log('render index for /home');
         res.render('index');
         return;
+    } 
+    if (req.url === '/admin') {
+        console.log('render index for /admin');
+        res.render('index');
+        return;
     }
     if (req.url === '/' || req.url === "") {
         console.log("base URL, app.get('env') = " + global.app.get('env'));
@@ -42,6 +47,11 @@ exports.index = function(req, res) {
     }
     return;
 };
+
+exports.admin = function(req, res) {
+    res.render('admin');
+    return;
+}
 
 exports.contestant = function (req, res) {
     var id = req.params.id;

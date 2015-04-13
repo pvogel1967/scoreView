@@ -56,9 +56,15 @@ app.use(express.methodOverride());
 app.use(express.static(path.join(__dirname,'public')));
 app.use(app.router);
 
+// development only
+if (app.get('env') == 'development') {
+    app.use(express.errorHandler());
+    var mdns = require('mdns2');
+}
 
 // production only
 if (app.get('env') == 'production') {
+    // production only
     // TODO
 } else {
     app.use(express.errorHandler());
@@ -127,11 +133,20 @@ var judgeScoresSaved = function (req, res) {
 // serve index and view partials
 app.get('/heartbeat', heartbeat.heartbeat);
 app.get('/home', routes.index);
+app.get('/admin', routes.index);
+app.post('/admin', function(req, res) {
+    importDir = req.body.importDir;
+    contestFile = req.body.contestFile;
+    if (contestFile.indexOf('/') < 0 && contestFile.indexOf('\\') < 0) {
+        contestFile = masterScoreDir + "/" + contestFile;
+    }
+    console.log('importDir = ' + importDir + ', contestFile = ' + contestFile);
+    adminConfig(contestFile, importDir, function () {res.redirect('/' + contestId);});
+});
 app.get('/:id', routes.index);
 //app.get('/contestant/:amaid', routes.index);
 app.get('/partials/:name', routes.partials);
 //app.get('/:id/contestant/:amaid', routes.contestant);
-
 
 // JSON API
 app.get('/api/contest/:id', api.contestResults);
@@ -165,28 +180,37 @@ if (process.argv.length < 3) {
             contestFile = masterScoreDir + "/" + contestFile;
         }
 
-        var exportDir = masterScoreImportDir;
-        mkdirp(exportDir, function (err) {
-            if (err) {
-                console.log('Error creating exportDir: ' + err);
-                process.exit(2);
-            }
-        });
 
         if (process.argv.length < 4) {
             console.log('Must specify score export directory from MasterScoring');
             process.exit(1);
         }
         var importDir = process.argv[3];
-        processContestFile(contestFile, startServer);
-        var Gaze = require('gaze').Gaze;
-        console.log('import: ' + importDir + '/contestResults.json');
-        var fd = fs.openSync(importDir + '/contestResults.json', 'w');
-        fs.closeSync(fd);
-        var gaze = new Gaze('contestResults.json', {'debounceDelay':0, 'mode':'poll', cwd:importDir});
+        adminConfig(contestFile, importDir, startServer);
+    }
+}
+
+function adminConfig(contestFile, importDir, dbCallback) {
+    var exportDir = masterScoreImportDir;
+    mkdirp(exportDir, function (err) {
+        if (err) {
+            console.log('Error creating exportDir: ' + err);
+            process.exit(2);
+        }
+    });
+    console.log("disconnecting mongoose");
+    mongoose.disconnect(function() {
+        processContestFile(contestFile, dbCallback);
+    });
+   
+    var Gaze = require('gaze').Gaze;
+    console.log('import: ' + importDir + '/contestResults.json');
+    var fd = fs.openSync(importDir + '/contestResults.json', 'w');
+    fs.closeSync(fd);
+    var gaze = new Gaze('contestResults.json', {'debounceDelay':0, 'mode':'poll', cwd:importDir});
 
 // Files have all started watching
-        gaze.on('ready', function(watcher) { console.log('ready, watching '+ importDir + '/contestResults.json') });
+    gaze.on('ready', function(watcher) { console.log('ready, watching '+ importDir + '/contestResults.json') });
 
         gaze.on('all', function(event, filepath) {
             var promises = [];
@@ -195,8 +219,13 @@ if (process.argv.length < 3) {
             }
         });
     }
+    gaze.on('all', function(event, filepath) {
+        var promises = [];
+        if (event === 'changed' || event==='added') {
+            processContestResultsData(filepath, promises);
+        }
+    });
 }
-
 function startServer() {
     var server= http.createServer(app);
     var io = require('socket.io').listen(server);
@@ -219,7 +248,6 @@ function startServer() {
             var className = data.className;
             var contestantNum = data.contestant;
             var round = data.round;
-            console.log('got judgeScoresSaved');
             var judgeNum = data.judgeId;
             var promise = findExistingScoreMatrix(className, contestantNum, round);
             promise.then(function(scoreMatrix) {
@@ -283,6 +311,7 @@ function openDB(openCallback) {
     var db = mongoose.connection;
     db.on('error', console.error.bind(console, 'connection error:'));
     db.once('open', function() {
+        console.log("openDB complete, saving in app.db and global.db");
         app.db = db;
         global.db = db;
         openCallback();
@@ -300,6 +329,7 @@ function processContestFile(fileName, callbackFn) {
         var masterContest = result.ContestData.Contest[0];
         var db = mongoose.connection;
         if (db.readyState != 1) {
+            console.log("db not ready in processContestFile, calling openDB");
             app.set('mongoDB', masterContest.ID[0]);
             openDB(function dbCallback() {
                 processContestData(result, callbackFn);
@@ -308,6 +338,7 @@ function processContestFile(fileName, callbackFn) {
                 });
             });
         } else {
+            console.log("db thought to be ready, calling processContestData");
             processContestData(result, callbackFn);
         }
     });

@@ -22,6 +22,10 @@ angular.module('myApp', [
                 templateUrl: '/partials/home',
                 controller: 'HomeCtrl'
             }).
+            when('/admin', {
+                templateUrl: '/partials/admin',
+                controller: 'HomeCtrl'
+            }).
             when('/:id', {
                 templateUrl: '/partials/contest',
                 controller: 'AppCtrl'
