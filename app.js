@@ -16,6 +16,8 @@ var model = require('./model/model');
 var mkdirp = require('mkdirp');
 var masterScoreDir = process.env.ProgramData + "/MasterScoring";
 var masterScoreImportDir = masterScoreDir + "/TransferIn";
+var ad2;
+var ad;
 
 var interfaces = os.networkInterfaces();
 var addresses = [];
@@ -55,12 +57,6 @@ app.use(express.bodyParser());
 app.use(express.methodOverride());
 app.use(express.static(path.join(__dirname,'public')));
 app.use(app.router);
-
-// development only
-if (app.get('env') == 'development') {
-    app.use(express.errorHandler());
-    var mdns = require('mdns2');
-}
 
 // production only
 if (app.get('env') == 'production') {
@@ -198,6 +194,7 @@ function adminConfig(contestFile, importDir, dbCallback) {
             process.exit(2);
         }
     });
+    adapterMode = true;
     console.log("disconnecting mongoose");
     mongoose.disconnect(function() {
         processContestFile(contestFile, dbCallback);
@@ -211,14 +208,6 @@ function adminConfig(contestFile, importDir, dbCallback) {
 
 // Files have all started watching
     gaze.on('ready', function(watcher) { console.log('ready, watching '+ importDir + '/contestResults.json') });
-
-        gaze.on('all', function(event, filepath) {
-            var promises = [];
-            if (event === 'changed' || event==='added') {
-                processContestResultsData(filepath, promises);
-            }
-        });
-    }
     gaze.on('all', function(event, filepath) {
         var promises = [];
         if (event === 'changed' || event==='added') {
@@ -267,7 +256,7 @@ function startServer() {
                                 MasterScoreImport.Contestant.Judge.Maneuver.push(maneuver);
                             }
                         }
-                        var fileName = exportDir + '/' + className + '-' + contestantNum + '-' + round + '-' + judgeNum+ '.xml';
+                        var fileName = masterScoreImportDir + '/' + className + '-' + contestantNum + '-' + round + '-' + judgeNum+ '.xml';
                         var tmpFile = fileName + ".tmp";
                         fs.writeFile(tmpFile, js2xml('MasterScoreImport', MasterScoreImport), function(err) {
                             if (err) {
@@ -294,9 +283,11 @@ function startServer() {
     server.listen(app.get('port'), function () {
         console.log('Express server listening on port ' + app.get('port'));
     });
-
     if (app.get('env') === 'production') {
     } else {
+        if (ad2 !== undefined && ad2 !== null) {
+            ad2.stop();
+        }
         ad2 = mdns.createAdvertisement(mdns.tcp('http'), 80, {txtRecord:{name:"PatternScoring"}});
         ad2.start();
         console.log("mdns started for http");
@@ -892,7 +883,10 @@ function processContestData(result, callbackFn) {
                         'MongoDB': contest.ContestID
                     };
                     if (app.get('env') !== "production") {
-                        var ad = mdns.createAdvertisement(mdns.tcp('mongodb'), 27071, {'txtRecord': txtRecord});
+                        if (ad !== null && ad !== undefined) {
+                            ad.stop();
+                        }
+                        ad = mdns.createAdvertisement(mdns.tcp('mongodb'), 27071, {'txtRecord': txtRecord});
                         ad.start();
                     }
                     callbackFn();
