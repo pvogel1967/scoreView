@@ -1,0 +1,16 @@
+
+.container-fluid
+    .page-header
+    // things we need
+    // contestFile
+    // importDir
+    form(role='form',action='/admin', method='POST')
+        div(class='form-group')
+            label(for="contestFile") Contest File:
+            input(type="textarea", class="form-control", id="contestFile", name="contestFile")
+        div(class='form-group')
+            label(for="importDir") Import Directory:
+            input(type="textarea", class="form-control", id="importDir", name="importDir")
+        button(type="submit" class="btn btn-default") Update
+
+

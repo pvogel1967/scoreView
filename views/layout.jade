@@ -1,42 +1,47 @@
-!!! 5
+doctype html
 html(ng-app="myApp")
-	head
-		base(href='/')
-		meta(http-equiv='X-UA-Compatible', content='IE=edge')
-		meta(name='viewport', content='width=device-width, initial-scale=1, target-densityDpi=device-dpi')
-		title Contest Results
-		link(rel='stylesheet', href='/css/bootstrap.min.css')
+    head
+        base(href='/')
+        meta(http-equiv='X-UA-Compatible', content='IE=edge')
+        meta(name='viewport', content='width=device-width, initial-scale=1, target-densityDpi=device-dpi')
+        title Contest Results
+        link(rel='stylesheet', href='/css/bootstrap.min.css')
 
-		link(rel='stylesheet', href='/css/jquery.jqplot.css')
-	body
-		.navbar.navbar-inverse.navbar-fixed-top
-			.container-fluid
-				.navbar-header
-					a.navbar-brand(href='/home',title='Pattern Score Board')
-						img(src='/img/Logo40.png',style='max-width:40px; margin-top:-10px')
-					a.navbar-brand(href='/home')
-						b Pattern Score Board
-				.pull-right
-					form(action="https://www.paypal.com/cgi-bin/webscr",method="post",target="_top")
-						input(type="hidden",name="cmd",value="_s-xclick")
-						input(type="hidden",name="hosted_button_id",value="7JWN5AL36S3KY")
-						input(type="image",src="https://www.paypalobjects.com/en_US/i/btn/btn_donate_LG.gif",border="0",name="submit",alt="PayPal - The safer, easier way to pay online!",style='margin-top: +12px')
-						img(alt="",border="0",src="https://www.paypalobjects.com/en_US/i/scr/pixel.gif",width="1",height="1")
-		block body
-		script(type='text/javascript', src='/js/jquery.min.js')
-		script(type='text/javascript', src='/js/bootstrap.min.js')
-		script(type='text/javascript', src="/js/jquery.min.js")
-		script(type='text/javascript', src='/js/lib/angular/angular.js')
-		script(type='text/javascript', src='/js/lib/angular/angular-resource.js')
-		script(type='text/javascript', src='/socket.io/socket.io.js')
-		script(type='text/javascript', src="/js/bootstrap.min.js")
-		script(type='text/javascript', src="/js/Chart.js")
-		script(type='text/javascript', src="/js/jquery.jqplot.js")
-		script(type='text/javascript', src="/js/plugins/jqplot.barRenderer.js")
-		script(type='text/javascript', src="/js/plugins/jqplot.categoryAxisRenderer.min.js")
-		script(type='text/javascript', src="/js/app.js")
-		script(type='text/javascript', src="/js/services.js")
-		script(type='text/javascript', src="/js/controllers.js")
-		script(type='text/javascript', src="/js/filters.js")
-		script(type='text/javascript', src="/js/directives.js")
-		script(type='text/javascript', src="/js/angles.js")
+        link(rel='stylesheet', href='/css/jquery.jqplot.css')
+    body
+        .navbar.navbar-inverse.navbar-fixed-top
+            .container-fluid
+                .navbar-header
+                    a.navbar-brand(href='/home',title='Pattern Score Board')
+                        img(src='/img/Logo40.png',style='max-width:40px; margin-top:-10px')
+                    a.navbar-brand(href='/home')
+                        b Pattern Score Board
+                .pull-right
+                    form(action="https://www.paypal.com/cgi-bin/webscr",method="post",target="_top")
+                        input(type="hidden",name="cmd",value="_s-xclick")
+                        input(type="hidden",name="hosted_button_id",value="7JWN5AL36S3KY")
+                        input(type="image",src="https://www.paypalobjects.com/en_US/i/btn/btn_donate_LG.gif",border="0",name="submit",alt="PayPal - The safer, easier way to pay online!",style='margin-top: +12px')
+                        img(alt="",border="0",src="https://www.paypalobjects.com/en_US/i/scr/pixel.gif",width="1",height="1")
+        block body
+        script(type='text/javascript', src='/js/jquery.min.js')
+        script(type='text/javascript', src='/js/bootstrap.min.js')
+        script(type='text/javascript', src="/js/jquery.min.js")
+        script(type='text/javascript', src='/js/lib/angular/angular.js')
+        script(type='text/javascript', src='/js/lib/angular/angular-resource.js')
+        script(type='text/javascript', src='/socket.io/socket.io.js')
+        script(type='text/javascript', src='/js/d3.min.js')
+        script(type='text/javascript', src='/js/nv.d3.js')
+        script(type='text/javascript', src='/js/angular-nvd3.js')
+        script(type='text/javascript', src="/js/bootstrap.min.js")
+        script(type='text/javascript', src="/js/Chart.js")
+        script(type='text/javascript', src="/js/jquery.jqplot.js")
+        script(type='text/javascript', src="/js/plugins/jqplot.barRenderer.js")
+        script(type='text/javascript', src="/js/plugins/jqplot.categoryAxisRenderer.min.js")
+        script(type='text/javascript', src="/js/plugins/jqPlot.canvasAxisTickRenderer.min.js")
+        script(type='text/javascript', src="/js/plugins/jqPlot.canvasTextRenderer.min.js")
+        script(type='text/javascript', src="/js/app.js")
+        script(type='text/javascript', src="/js/services.js")
+        script(type='text/javascript', src="/js/controllers.js")
+        script(type='text/javascript', src="/js/filters.js")
+        script(type='text/javascript', src="/js/directives.js")
+        script(type='text/javascript', src="/js/angles.js")

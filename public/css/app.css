@@ -28,3 +28,58 @@
   content: "";
   padding: 0;
 }
+
+.zero {
+    background: #E60000;
+}
+
+.one {
+    text-align: center;
+    background: #E52200;
+}
+
+.two {
+    text-align: center;
+    background: #E44501;
+}
+
+.three {
+    text-align: center;
+    background: #E46701
+}
+
+.four {
+    text-align: center;
+    background: #E38902
+}
+
+.five {
+    text-align: center;
+    background: #E3AA03
+}
+
+.six {
+    text-align: center;
+    background: #E2CB03
+}
+
+.seven {
+    text-align: center;
+    background: #D7E104
+}
+
+.eight {
+    text-align: center;
+    background: #B5E104
+}
+
+.nine {
+    text-align: center;
+    background: #94E005
+}
+
+.ten {
+    text-align: center;
+    background: #74E006
+}
+

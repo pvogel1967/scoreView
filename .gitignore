@@ -1,0 +1,8 @@
+.elasticbeanstalk/
+/node_modules/
+/.idea/
+/data/
+/scoreExport/
+/scoreImport/
+/MasterScoreExport/
+*.json
