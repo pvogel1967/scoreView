@@ -1,5 +1,6 @@
 var http = require('http');
 var ss=require('simple-statistics');
+var noPublish = false;
 
 exports.judgeScoresSaved = function (req, res) {
     var className = req.params.className;
@@ -56,6 +57,17 @@ exports.judgeScoresSaved = function (req, res) {
     res.json(data);
 };
 
+exports.publish = function(req, res) {
+    noPublish = false;
+    exports.updatePatternScoringCom(req.params.id);
+    res.json({publish: !noPublish});
+}
+
+exports.nopublish = function(req, res) {
+    noPublish = true;
+    res.json({publish: !noPublish});
+}
+
 exports.contestResults = function(req, res) {
     if (req.method == 'POST') {
         console.log('got POST of ContestData');
@@ -94,31 +106,33 @@ exports.contestResults = function(req, res) {
 }
 
 function sendToPatternScoring(uri, obj) {
-    var data = JSON.stringify(obj)
-    var options = {
-        host: 'www.patternscoring.com',
-        port: 80,
-        path: uri,
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Content-Length': Buffer.byteLength(data)
-        }
-    };
+    if (!noPublish) {
+        var data = JSON.stringify(obj)
+        var options = {
+            host: 'www.patternscoring.com',
+            port: 80,
+            path: uri,
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Content-Length': Buffer.byteLength(data)
+            }
+        };
 
-    console.log('POSTing to http://www.patternscoring.com' + uri + ": " + data);
-    try {
-        var req = http.request(options, function (res) {
-            res.setEncoding('utf8');
-            res.on('data', function (chunk) {
-                console.log("response from patternScoring: " + chunk);
+        //console.log('POSTing to http://www.patternscoring.com' + uri + ": " + data);
+        try {
+            var req = http.request(options, function (res) {
+                res.setEncoding('utf8');
+                res.on('data', function (chunk) {
+                    console.log("response from patternScoring: " + chunk);
+                });
             });
-        });
 
-        req.write(data);
-        req.end();
-    } catch(err) {
-        console.log('Error saving to patternScoring: ' + err);
+            req.write(data);
+            req.end();
+        } catch (err) {
+            console.log('Error saving to patternScoring: ' + err);
+        }
     }
 };
 
@@ -178,7 +192,11 @@ function scrubContestantData(contestant) {
     }
     return contestant;
 }
+
 exports.updatePatternScoringCom = function updatePatternScoringCom(data) {
+    if (noPublish) {
+        return;
+    }
     global.model.contestData.findOne({"contestID": data}, function(err, contest) {
         if (err != null) {
             console.log('unable to update patternScoring.com, cannot read contest: ' + data + ':' + err);
@@ -312,7 +330,13 @@ exports.contestantResults = function(req, res) {
         });
     } else {
         console.log('got request for contestant results: {"contestID":"' + req.params.id + '","amaNumber":"'+ req.params.amaid + '","className":"' + req.params.classcode +'"}');
-        global.model.contestantResult.findOne({"contestID":req.params.id, "amaNumber":req.params.amaid, "className":req.params.classcode}, function(err, res1) {
+        var tmpClassCode = req.params.classcode;
+        var classCodeSuffix = '';
+        if (req.params.id.length > 5 && tmpClassCode.length > 3) {
+            tmpClassCode = tmpClassCode.substr(0,3);
+            classCodeSuffix = req.params.classcode.substr(3,1);
+        }
+        global.model.contestantResult.findOne({"contestID":req.params.id, "amaNumber":req.params.amaid, "className":tmpClassCode}, function(err, res1) {
             if (err !== null) {
                 res.statusCode = 500;
                 res.end('unable to find contestant detailed results for ' + req.params.amaid);
@@ -327,8 +351,15 @@ exports.contestantResults = function(req, res) {
                 return;
             }
             var result = res1.toObject();
-            for (var s=0; s<result.schedules.length; s++) {
-                (function(s) {
+            var s = 0;
+            if (result.schedules.length > 1 && (classCodeSuffix === 'F' || classCodeSuffix === 'S') ) {
+                result.schedules[0] = result.schedules[1];
+                result.schedules.length = 1;
+            }
+            if (result.schedules.length > 1 && (classCodeSuffix === 'P')) {
+                result.schedules.length = 1;
+            }
+            (function(s) {
                     var scoreCount = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
                     var overallAvgDiff = [];
                     var maneuverAvg = [];
@@ -383,7 +414,7 @@ exports.contestantResults = function(req, res) {
                         }
                     }
                     console.log("kFactorAvg length = " + kFactorAvg.length);
-                    while (kFactorAvg[kFactorAvg.length - 1].count == 0) {
+                    while (kFactorAvg.length > 0 && kFactorAvg[kFactorAvg.length - 1].count == 0) {
                         kFactorAvg.pop();
                         console.log("kFactorAvg length = " + kFactorAvg.length);
                     }
@@ -400,18 +431,22 @@ exports.contestantResults = function(req, res) {
                         sched.maneuverDiff[m] = (maneuverAvg[m] - sched.overallAvg) * maneuverKFactor[m];
                     }
 
-                    console.log('get opponent results: {"contestID":"' + req.params.id + '","finalPlacement":"1","className":"' + req.params.classcode + '"}');
-                    global.model.contestantResult.findOne({"contestID": req.params.id, "finalPlacement": "1", "className": req.params.classcode}, function (err, opponent) {
+                    console.log('get opponent results: {"contestID":"' + req.params.id + '","finalPlacement":"1","className":"' + tmpClassCode + '"}');
+                    global.model.contestantResult.findOne({"contestID": req.params.id, "finalPlacement": "1", "className": tmpClassCode}, function (err, opponent) {
                         if (err != null) {
                             console.log('unable to find contestant detailed results #1 in class:' + result.className + ' -- err: ' + err);
                         } else if (opponent === null || opponent.schedules === null || opponent.schedules[0] === null || opponent.schedules[0].maneuvers === null) {
                             console.log('got empty results for opponent');
                         } else {
                             console.log('got #1 opponent: ' + opponent.amaNumber);
-                            for (var m = 0; m < opponent.schedules[0].maneuvers.length; m++) {
+                            if (opponent.schedules.length > 1 && classCodeSuffix === 'F') {
+                                opponent.schedules[0] = opponent.schedules[1];
+                                opponent.schedules.length = 1;
+                            }
+                            for (var m = 0; m < opponent.schedules[s].maneuvers.length; m++) {
                                 var mTot = 0;
                                 var mCount = 0;
-                                var maneuver = opponent.schedules[0].maneuvers[m];
+                                var maneuver = opponent.schedules[s].maneuvers[m];
                                 if (maneuver != null) {
                                     for (var r = 0; r < maneuver.flights.length; r++) {
                                         for (var j = 0; j < 2; j++) {
@@ -432,7 +467,6 @@ exports.contestantResults = function(req, res) {
                         }
                     });
                 })(s);
-            }
         });
     }
 };

@@ -46,3 +46,16 @@ angular.module('contestant.services', ['ngResource']).
 		);
 	});
 
+angular.module('admin.services', ['ngResource']).
+    factory('publish', function($resource) {
+        return $resource('/api/contest/:contestId/publish',
+            {contestId:'@contestId'},
+            {query: {method:'GET', isArray:false}}
+        );
+    }).
+    factory('nopublish', function($resource) {
+        return $resource('/api/contest/:contestId/nopublish',
+            {contestId:'@contestId'},
+            {query: {method:'GET', isArray:false}}
+        );
+    });

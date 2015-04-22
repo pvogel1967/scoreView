@@ -151,7 +151,13 @@ app.get('/api/contestList', api.contestList);
 app.get('/api/judgeScoresSaved/:className/:contestantNum/:round/:judgeNum', judgeScoresSaved);
 app.get('/api/contest/:id/class/:classcode/contestant/:amaid', api.contestantResults);
 app.post('/api/contest/:id/class/:classcode/contestant/:amaid', api.contestantResults);
+app.get('/api/contest/:id/publish', api.publish);
+app.get('/api/contest/:id/nopublish', api.nopublish);
 app.get('/api/addTimestamps', api.addPilotTimeStamp);
+app.get('/api/readContestResults', function(req, res) {
+    var promises = [];
+    processContestResultsData(importFilePath, promises);
+});
 app.get('/api/secured/pilot/:amaid/class/:classcode', api.contestantAllResults);
 
 // redirect all others to the index (HTML5 history)
@@ -162,6 +168,7 @@ var readFile = Q.denodeify(fs.readFile);
 var parseString = Q.denodeify(parser.parseString);
 var contestId = 'contestId';
 var adapterMode = true;
+var importFilePath;
 
 if (process.argv.length < 3) {
     adapterMode = false;
@@ -205,7 +212,7 @@ function adminConfig(contestFile, importDir, dbCallback) {
     var fd = fs.openSync(importDir + '/contestResults.json', 'w');
     fs.closeSync(fd);
     var gaze = new Gaze('contestResults.json', {'debounceDelay':0, 'mode':'poll', cwd:importDir});
-
+    importFilePath = importDir + '/contestResults.json'
 // Files have all started watching
     gaze.on('ready', function(watcher) { console.log('ready, watching '+ importDir + '/contestResults.json') });
     gaze.on('all', function(event, filepath) {
@@ -592,7 +599,7 @@ function deleteContestDataByContestID(contestID) {
 function deleteContestantResultsByContestIDAndAMANumber(contestID, amaNumber, className) {
     console.log('look for ContestantResults: (' + contestID + ", " + amaNumber + ", " + className + ")");
     var deferred = Q.defer();
-    model.contestData.remove({'contestID': contestID, 'amaNumber':amaNumber, 'className':className}, function(err) {
+    model.contestantResult.remove({'contestID': contestID, 'amaNumber':amaNumber, 'className':className}, function(err) {
         if (err) {
             deferred.reject(new Error('Problem deleting contestantResults: (' + contestID + ", " + amaNumber + ", " + className + ")"));
         } else {
