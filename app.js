@@ -29,6 +29,7 @@ for (k in interfaces) {
         }
     }
 }
+global.serverIP = addresses[0];
 
 var classMap = {};
 var classNameMap = {};
@@ -131,6 +132,10 @@ app.get('/heartbeat', heartbeat.heartbeat);
 app.get('/home', routes.index);
 app.get('/admin', routes.index);
 app.post('/admin', function(req, res) {
+    if (req.body.contestId.length > 0) {
+        contestId = req.body.contestId;
+        res.redirect('/' + contestId);
+    }
     importDir = req.body.importDir;
     contestFile = req.body.contestFile;
     if (contestFile.indexOf('/') < 0 && contestFile.indexOf('\\') < 0) {
@@ -145,6 +150,16 @@ app.get('/partials/:name', routes.partials);
 //app.get('/:id/contestant/:amaid', routes.contestant);
 
 // JSON API
+var contestAPIData = {};
+app.get('/api/currentContest', function(req, res) {
+    contestAPIData.ContestID = contestId;
+    res.json(contestAPIData);
+});
+app.get('/api/currentContest/:id', function(req, res) {
+    contestId = req.params.id;
+    contestAPIData.ContestID = req.params.id;
+    res.json(contestAPIData);
+})
 app.get('/api/contest/:id', api.contestResults);
 app.post('/api/contest/:id', api.contestResults);
 app.get('/api/contestList', api.contestList);
@@ -169,6 +184,7 @@ var parseString = Q.denodeify(parser.parseString);
 var contestId = 'contestId';
 var adapterMode = true;
 var importFilePath;
+
 
 if (process.argv.length < 3) {
     adapterMode = false;
@@ -303,6 +319,11 @@ function startServer() {
 
 function openDB(openCallback) {
     var mongoConnectionString = "mongodb://" + app.get('mongoConnection') + "/" + app.get('mongoDB');
+    contestAPIData = {
+        'MongoServer': addresses[0],
+        'MongoPort': "27017",
+        'MongoDB': app.get('mongoDB')
+    };
     console.log('MongoConnection: ' + mongoConnectionString);
     app.set('mongoConnectionString', mongoConnectionString);
     mongoose.connect(mongoConnectionString);
@@ -889,6 +910,7 @@ function processContestData(result, callbackFn) {
                         'MongoPort': "27017",
                         'MongoDB': contest.ContestID
                     };
+                    contestAPIData = txtRecord;
                     if (app.get('env') !== "production") {
                         if (ad !== null && ad !== undefined) {
                             ad.stop();

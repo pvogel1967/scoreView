@@ -14,7 +14,7 @@ exports.index = function(req, res) {
     } 
     if (req.url === '/admin') {
         console.log('render index for /admin');
-        res.render('index');
+        res.render('index', {'serverIP':global.serverIP});
         return;
     }
     if (req.url === '/' || req.url === "") {
