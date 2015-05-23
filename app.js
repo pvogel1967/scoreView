@@ -8,12 +8,12 @@ var express = require('express'),
     http = require('http'),
     path = require('path');
 var fs = require('fs');
-var Gaze = require('gaze').Gaze;
 var touch = require('touch')
 var xml2js = require('xml2js');
 var js2xml = require('js2xmlparser');
 var model = require('./model/model');
 var mkdirp = require('mkdirp');
+var moment = require('moment');
 var masterScoreDir = process.env.ProgramData + "/MasterScoring";
 var masterScoreImportDir = masterScoreDir + "/TransferIn";
 var ad2;
@@ -78,7 +78,7 @@ var judgeScoresSaved = function (req, res) {
         'contestant':contestantNum,
         'round':round,
         'judgeId':judgeNum
-    }
+    };
     console.dir(data);
     var promise = findExistingScoreMatrix(className, contestantNum, round);
     promise.then(function (scoreMatrix) {
@@ -133,8 +133,12 @@ app.get('/home', routes.index);
 app.get('/admin', routes.index);
 app.post('/admin', function(req, res) {
     if (req.body.contestId.length > 0) {
+        app.set('mongoConnection', process.env.MONGOCONNECTION || "localhost:27017");
+        app.set('mongoDB', process.env.MONGODB || "patternscoring");
+        app.set('port', process.env.PORT || 80);
         contestId = req.body.contestId;
-        res.redirect('/' + contestId);
+        mongoose.disconnect(function() {openDB(function() {res.redirect('/' + contestId);});})
+        //res.redirect('/' + contestId);
     }
     importDir = req.body.importDir;
     contestFile = req.body.contestFile;
@@ -209,6 +213,7 @@ if (process.argv.length < 3) {
     }
 }
 
+var resultsMtime = undefined;
 function adminConfig(contestFile, importDir, dbCallback) {
     var exportDir = masterScoreImportDir;
     mkdirp(exportDir, function (err) {
@@ -222,25 +227,37 @@ function adminConfig(contestFile, importDir, dbCallback) {
     mongoose.disconnect(function() {
         processContestFile(contestFile, dbCallback);
     });
-   
-    var Gaze = require('gaze').Gaze;
+
     console.log('import: ' + importDir + '/contestResults.json');
-    var fd = fs.openSync(importDir + '/contestResults.json', 'w');
+    importFilePath = importDir + '/contestResults.json';
+    var fd = fs.openSync(importFilePath, 'w');
     fs.closeSync(fd);
-    var gaze = new Gaze('contestResults.json', {'debounceDelay':0, 'mode':'poll', cwd:importDir});
-    importFilePath = importDir + '/contestResults.json'
-// Files have all started watching
-    gaze.on('ready', function(watcher) { console.log('ready, watching '+ importDir + '/contestResults.json') });
-    gaze.on('all', function(event, filepath) {
+    resultsMtime = moment();
+    //var gaze = new Gaze('contestResults.json', {'debounceDelay':0, 'mode':'poll', cwd:importDir});
+
+    setInterval(function(contestData) {
         var promises = [];
-        if (event === 'changed' || event==='added') {
-            processContestResultsData(filepath, promises);
-        }
-    });
+        fs.stat(contestData, function(err, stats) {
+            if (stats !== null && stats !== undefined && moment(stats.mtime).isAfter(resultsMtime)) {
+                resultsMtime = moment(stats.mtime);
+                processContestResultsData(contestData, promises);
+            }
+        });
+    }, 1*20*1000, importFilePath);
+// Files have all started watching
+    //gaze.on('ready', function(watcher) { console.log('ready, watching '+ importDir + '/contestResults.json') });
+    //gaze.on('all', function(event, filepath) {
+    //    var promises = [];
+    //    if (event === 'changed' || event==='added') {
+    //        processContestResultsData(filepath, promises);
+    //    }
+    //});
 }
+
 function startServer() {
     var server= http.createServer(app);
     var io = require('socket.io').listen(server);
+    io.set('log level', 1); // reduce logging
     global.io = io;
     io.on('connection', function webSocketConnection(socket) {
         console.log('got socket connection');
@@ -337,6 +354,7 @@ function openDB(openCallback) {
     });
 }
 
+var contestDataTime = moment();
 function processContestFile(fileName, callbackFn) {
     console.log('processing contestFile: ' + fileName);
     var file = readFile(fileName);
@@ -351,10 +369,21 @@ function processContestFile(fileName, callbackFn) {
             console.log("db not ready in processContestFile, calling openDB");
             app.set('mongoDB', masterContest.ID[0]);
             openDB(function dbCallback() {
-                processContestData(result, callbackFn);
-                fs.watch(fileName, function contestFileChanged(curr, prev) {
-                   processContestFile(fileName, function alreadyStarted() {});
+                fs.stat(fileName, function(err, stats) {
+                    contestDataTime = moment(stats.mtime);
+                    processContestData(result, callbackFn);
                 });
+                setInterval(function(contestData) {
+                    fs.stat(contestData, function(err, stats) {
+                        if (stats !== null && stats !== undefined && moment(stats.mtime).isAfter(contestDataTime)) {
+                            contestDataTime = moment(stats.mtime);
+                            processContestFile(contestData, function alreadyStarted() {});
+                        }
+                    });
+                }, 1*20*1000, fileName);
+                //fs.watch(fileName, function contestFileChanged(curr, prev) {
+                //   processContestFile(fileName, function alreadyStarted() {});
+                //});
             });
         } else {
             console.log("db thought to be ready, calling processContestData");
