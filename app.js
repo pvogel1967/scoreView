@@ -68,6 +68,30 @@ if (app.get('env') == 'production') {
     var mdns = require('mdns2');
 }
 
+var testScoreExport = function(req, res) {
+    var className = req.params.className;
+    var contestantNum = req.params.contestantNum;
+    var round = req.params.round;
+    var judgeNum = req.params.judgeNum;
+    var data = {
+        'className':className,
+        'contestant':contestantNum,
+        'round':round,
+        'judgeId':judgeNum
+    };
+    console.dir(data);
+    var promise = findExistingScoreMatrix(className, contestantNum, round);
+    promise.then(function (scoreMatrix) {
+        var promise2 = findScoreMatrixRows(scoreMatrix);
+        promise2.then(function (rows) {
+            var promise3 = findJudgeScoresForMatrix(scoreMatrix, judgeNum);
+            promise3.then(function (scores) {
+                console.log('done');
+            });
+        });
+    });
+}
+
 var judgeScoresSaved = function (req, res) {
     var className = req.params.className;
     var contestantNum = req.params.contestantNum;
@@ -168,6 +192,7 @@ app.get('/api/contest/:id', api.contestResults);
 app.post('/api/contest/:id', api.contestResults);
 app.get('/api/contestList', api.contestList);
 app.get('/api/judgeScoresSaved/:className/:contestantNum/:round/:judgeNum', judgeScoresSaved);
+app.get('/api/testScoreExport/:className/:contestantNum/:round/:judgeNum', judgeScoresSaved);
 app.get('/api/contest/:id/class/:classcode/contestant/:amaid', api.contestantResults);
 app.post('/api/contest/:id/class/:classcode/contestant/:amaid', api.contestantResults);
 app.get('/api/contest/:id/publish', api.publish);
@@ -526,6 +551,13 @@ function findJudgeScoresForMatrix(scoreMatrix, judgeNum) {
         if (err) {
             deferred.reject(new Error('Problem querying for scores: ' + err));
         } else {
+            scores.sort(function(a,b) {
+                return a.SequenceOrder - b.SequenceOrder;
+            });
+            console.log('got scores');
+            for (var i=0; i<scores.length; i++) {
+                console.log(i + ' / ' + scores[i].SequenceOrder + ' = ' + scores[i].Score);
+            }
             deferred.resolve(scores);
         }
     });
@@ -539,6 +571,9 @@ function findScoreMatrixRows(scoreMatrix) {
         if (err) {
             deferred.reject(new Error('Problem querying for matrix rows: ' + err));
         } else {
+            rows.sort(function(a,b) {
+                return a.Order - b.Order;
+            });
             deferred.resolve(rows);
         }
     });
@@ -686,12 +721,20 @@ function createMatricesForContestant(contest, contestant, className) {
                 matrix.Class = className;
                 matrix.Round = i;
                 var sequenceID = classToSequenceMap[classID][matrix.Round];
+                if (contestant.SequenceID !== undefined && contestant.SequenceID !== null) {
+                    sequenceID = contestant.SequenceID;
+                }
                 if (sequenceID !== undefined && sequenceID !== null) {
                     matrix.save(function (err, matrix) {
                         console.log('saved matrix for round ' + matrix.Round + ', class ' + className + ', contestant ' + contestant.Name + ': ' + matrix.id);
                         deleteScoreMatrixRows(matrix).then(function () {
                             var classID = classNameToIDMap[className];
-                            var sequenceID = classToSequenceMap[classID][matrix.Round];
+                            var sequenceID = undefined;
+                            if (contestant.SequenceID !== undefined && contestant.SequenceID !== null) {
+                                sequenceID = contestant.SequenceID;
+                            } else {
+                                sequenceID = classToSequenceMap[classID][matrix.Round];
+                            }
                             console.log('use sequenceID: ' + sequenceID);
                             var sequence = sequenceManeuverMap[sequenceID];
                             for (var j = 0; j < sequence.length; j++) {
@@ -765,6 +808,12 @@ function processContestData(result, callbackFn) {
             var maneuver = result.ContestData.Maneuver[i];
             var tmp = {};
             tmp.Name = maneuver.Name[0];
+            if (maneuver.SpokenText !== null && maneuver.SpokenText !== undefined) {
+                var spoken = maneuver.SpokenText[0];
+                if (spoken !== null && spoken.length > 0) {
+                    tmp.Name = spoken;
+                }
+            }
             tmp.KFactor = maneuver.KFactor[0];
             tmp.MasterScoreID = maneuver.ID[0];
             if (sequenceManeuverMap[maneuver.SequenceID[0]] === null || sequenceManeuverMap[maneuver.SequenceID[0]] === undefined) {
@@ -896,10 +945,16 @@ function processContestData(result, callbackFn) {
                         var existingContestant = findResult.contestant;
                         var contestant = findResult.data;
                         if (existingContestant !== null && existingContestant !== undefined) {
+                            if (contestant.SequenceID !== undefined && contestant.SequenceID !== null) {
+                                existingContestant.SequenceID = contestant.SequenceID[0];
+                            }
                             console.log('found contestant for judgeNum:' + existingContestant.JudgeNumber);
                             judgeNumToPersonId[existingContestant.JudgeNumber] = contestant.PersonID[0];
                             contestantNumToContestantId[existingContestant.JudgeNumber] = existingContestant.MasterScoreID;
-                            createMatricesForContestant(contest, exitingContestant, existingContestant.Class);
+                            existingContestant.save(function (err, existingContestant) {
+                                console.log('Saved new contestant');
+                                createMatricesForContestant(contest, existingContestant, existingContestant.Class);
+                            });
                             return;
                         }
                         var newContestant = new model.contestant;
@@ -912,6 +967,9 @@ function processContestData(result, callbackFn) {
                             newContestant.JudgeNumber = contestant.ContestantNumber[0];
                             judgeNumToPersonId[newContestant.JudgeNumber] = contestant.PersonID[0];
                             newContestant.MasterScoreID = contestant.ID[0];
+                            if (contestant.SequenceID !== undefined && contestant.SequenceID !== null) {
+                                newContestant.SequenceID = contestant.SequenceID[0];
+                            }
                             contestantNumToContestantId[newContestant.JudgeNumber] = newContestant.MasterScoreID;
                             var actualClassID = contestClassToClassMap[contestant.ContestClassID[0]];
                             var actualClass = classMap[actualClassID];

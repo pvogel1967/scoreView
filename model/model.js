@@ -57,7 +57,8 @@ var contestantSchema = new Schema({
     JudgeNumber: String,
     Class: String,
     Frequency: String,
-    MasterScoreID: String
+    MasterScoreID: String,
+    SequenceID: String
 }, {collection:'Contestant'});
 contestantSchema.index({ContestID:1});
 contestantSchema.index({ContestID:1,Class:1});
