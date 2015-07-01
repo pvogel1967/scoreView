@@ -17,6 +17,10 @@ exports.index = function(req, res) {
         res.render('index', {'serverIP':global.serverIP});
         return;
     }
+    if (req.url === 'contestList') {
+        console.log('render index for /contestList');
+        res.render('index', {'serverIP':global.serverIP});
+    }
     if (req.url === '/' || req.url === "") {
         console.log("base URL, app.get('env') = " + global.app.get('env'));
         if (global.app.get('env') === 'production') {
@@ -43,7 +47,7 @@ exports.index = function(req, res) {
         });
     } else {
         console.log('id = ' + id);
-        res.render('index',{contestId:id});
+        res.render('index',{contestId:id, 'serverIP':global.serverIP});
     }
     return;
 };

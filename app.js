@@ -55,10 +55,10 @@ app.set('views', __dirname + '/views');
 app.set('view engine', 'jade');
 app.use(express.logger('dev'));
 app.use(express.bodyParser());
-app.use(express.methodOverride());
+//app.use(express.methodOverride());
 app.use(express.static(path.join(__dirname,'public')));
 app.use(app.router);
-
+//app.set('env', 'production');
 // production only
 if (app.get('env') == 'production') {
     // production only
@@ -119,6 +119,8 @@ var judgeScoresSaved = function (req, res) {
                 for (i = 0; i < scores.length; i++) {
                     if (rows[i] !== undefined && rows[i] !== null && scores[i] !== undefined && scores[i] !== null) {
                         var maneuver = {'@': {'id': rows[i].MasterScoreID, 'score': scores[i].Score}};
+                        scores[i].IsProcessed = true;
+                        scores[i].save(function(err, score) {});
                         MasterScoreImport.Contestant.Judge.Maneuver.push(maneuver);
                     }
                 }
@@ -155,6 +157,7 @@ var judgeScoresSaved = function (req, res) {
 app.get('/heartbeat', heartbeat.heartbeat);
 app.get('/home', routes.index);
 app.get('/admin', routes.index);
+app.get('/contestList', routes.index);
 app.post('/admin', function(req, res) {
     if (req.body.contestId.length > 0) {
         app.set('mongoConnection', process.env.MONGOCONNECTION || "localhost:27017");
@@ -213,14 +216,27 @@ var parseString = Q.denodeify(parser.parseString);
 var contestId = 'contestId';
 var adapterMode = true;
 var importFilePath;
+var masterScoringPrefsTime = moment();
+var contestFilePath = undefined;
 
-
-if (process.argv.length < 3) {
+if (process.argv.length < 3 || process.argv[2] == "--excel") {
     adapterMode = false;
     openDB(function dbOpened() {
         console.log('opened database: ' + app.get('mongoConnectionString'));
         startServer();
     });
+} else if (process.argv.length > 2 && process.argv[2] == "--masterScoring") {
+    var masterScoringData = process.env.AppData + "/MasterScoring/App.user";
+    setInterval(function(prefsData) {
+        var promises = [];
+        fs.stat(prefsData, function(err, stats) {
+            if (stats !== null && stats !== undefined && moment(stats.mtime).isAfter(masterScoringPrefsTime)) {
+                masterScoringPrefsTime = moment(stats.mtime);
+                processMasterScoringPrefs(prefsData);
+            }
+        });
+    }, 1*5*1000, masterScoringData);
+    processMasterScoringPrefs(masterScoringData);
 } else {
     if (process.argv.length > 2) {
         var contestFile = process.argv[2];
@@ -250,6 +266,7 @@ function adminConfig(contestFile, importDir, dbCallback) {
     adapterMode = true;
     console.log("disconnecting mongoose");
     mongoose.disconnect(function() {
+        contestFilePath = contestFile;
         processContestFile(contestFile, dbCallback);
     });
 
@@ -279,6 +296,24 @@ function adminConfig(contestFile, importDir, dbCallback) {
     //});
 }
 
+function processMasterScoringPrefs(masterScoringData) {
+    if (fs.existsSync(masterScoringData)) {
+        var file = readFile(masterScoringData);
+        file.then(function (data) {
+            return parseString(data);
+        }).then(function (result) {
+            //console.dir(result.ContestData.Contest[0]);
+            var currentContest = result.userPreferences.contestFile[0];
+            var contestFile = masterScoreDir + "/" + currentContest;
+            var newImportDir = result.userPreferences.exportFolder[0];
+            if (contestFile !== contestFilePath || newImportDir !== importDir) {
+                console.log('MasterScoringPrefs changed');
+                importDir = newImportDir;
+                adminConfig(contestFile, importDir, startServer);
+            }
+        });
+    }
+}
 function startServer() {
     var server= http.createServer(app);
     var io = require('socket.io').listen(server);
@@ -318,6 +353,8 @@ function startServer() {
                         for (i=0; i<scores.length; i++) {
                             if (rows[i] !== undefined && rows[i] !== null && scores[i] !== undefined && scores[i] !== null) {
                                 var maneuver = {'@': {'id': rows[i].MasterScoreID, 'score': scores[i].Score}};
+                                scores[i].IsProcessed = true;
+                                scores[i].save(function(err, score) {});
                                 MasterScoreImport.Contestant.Judge.Maneuver.push(maneuver);
                             }
                         }
@@ -547,17 +584,17 @@ function findExistingScoreMatrix(className, contestantID, round) {
 function findJudgeScoresForMatrix(scoreMatrix, judgeNum) {
     //console.log('find scores for scoreMatrix: ' + scoreMatrix.id + ', judgeNum: ' + judgeNum);
     var deferred = Q.defer();
-    model.judgeScore.find({'ScoreMatrix': scoreMatrix.id, 'JudgeID': judgeNum}, function (err, scores) {
+    model.judgeScore.find({'ScoreMatrix': scoreMatrix.id, 'JudgeID': judgeNum, $or: [{'IsProcessed': {$exists:false}}, {'IsProcessed': {$exists:true, $eq:false}}]}, function (err, scores) {
         if (err) {
             deferred.reject(new Error('Problem querying for scores: ' + err));
         } else {
             scores.sort(function(a,b) {
                 return a.SequenceOrder - b.SequenceOrder;
             });
-            console.log('got scores');
-            for (var i=0; i<scores.length; i++) {
-                console.log(i + ' / ' + scores[i].SequenceOrder + ' = ' + scores[i].Score);
-            }
+            //console.log('got scores');
+            //for (var i=0; i<scores.length; i++) {
+            //    console.log(i + ' / ' + scores[i].SequenceOrder + ' = ' + scores[i].Score);
+            //}
             deferred.resolve(scores);
         }
     });
@@ -581,7 +618,7 @@ function findScoreMatrixRows(scoreMatrix) {
 }
 
 function deleteScoreMatrixRows(scoreMatrix) {
-    console.log('deleting rows for scoreMatrix: ' + scoreMatrix.id);
+    //console.log('deleting rows for scoreMatrix: ' + scoreMatrix.id);
     var deferred = Q.defer();
     model.scoreMatrixRow.remove({'ScoreMatrix': scoreMatrix.id}, function (err) {
         if (err) {
@@ -735,7 +772,7 @@ function createMatricesForContestant(contest, contestant, className) {
                             } else {
                                 sequenceID = classToSequenceMap[classID][matrix.Round];
                             }
-                            console.log('use sequenceID: ' + sequenceID);
+                            //console.log('use sequenceID: ' + sequenceID);
                             var sequence = sequenceManeuverMap[sequenceID];
                             for (var j = 0; j < sequence.length; j++) {
                                 var matrixRow = new model.scoreMatrixRow;
@@ -745,7 +782,7 @@ function createMatricesForContestant(contest, contestant, className) {
                                 matrixRow.MasterScoreID = maneuver.MasterScoreID;
                                 matrixRow.Order = j;
                                 matrixRow.save(function (err, matrixRow) {
-                                    console.log('saved scoreMatrixRow');
+                                    //console.log('saved scoreMatrixRow');
                                 });
                             }
                         });

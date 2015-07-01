@@ -9,7 +9,9 @@ angular.module('myApp', [
     'contestant.services',
     'myApp.directives',
     'angles',
-    'nvd3'
+    'nvd3',
+    'ngRoute',
+    'ui.bootstrap'
 ]).
     config(function ($routeProvider, $locationProvider) {
         $locationProvider.html5Mode(true);
@@ -20,6 +22,10 @@ angular.module('myApp', [
             }).
             when('/home', {
                 templateUrl: '/partials/home',
+                controller: 'HomeCtrl'
+            }).
+            when('/contestList', {
+                templateUrl: '/partials/contestList',
                 controller: 'HomeCtrl'
             }).
             when('/admin', {

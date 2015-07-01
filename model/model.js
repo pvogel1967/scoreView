@@ -71,7 +71,8 @@ var judgeScoreSchema = new Schema({
     JudgeId: String,
     SequenceOrder: Number,
     Score: Number,
-    IsNotObserved: Boolean
+    IsNotObserved: Boolean,
+    IsProcessed: Boolean
 }, {collection:'JudgeScore'});
 //judgeScoreSchema.index({ScoreMatix:1, JudgeId:1});
 //judgeScoreSchema.index({ScoreMatix:1, JudgeId:1, SequenceOrder:1});
@@ -148,6 +149,7 @@ var contestDataSchema = new Schema({
     contestName: String,
     date: String,
     district: String,
+    nsrcaDistrict: String,
     location: String,
     contestID: String,
     classData: [ {
@@ -173,6 +175,15 @@ var contestDataSchema = new Schema({
         }]
     }]
 }, {collection:'ContestData'});
+contestDataSchema.virtual('year').get(function() {
+    return this._year;
+});
+contestDataSchema.virtual('year').set(function(year) {
+    return this._year = year;
+});
+contestDataSchema.set('toJSON', {
+    virtuals: true
+});
 contestDataSchema.index({contestID:1});
 exports.contestData = mongoose.model('ContestData', contestDataSchema);
 

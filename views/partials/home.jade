@@ -3,25 +3,27 @@
     .row
         .col-lg-2.col-md-2.col-sm-4.col-xs-12
             .panel
+                .row(ng-repeat="year in contestList")
+                    .panel.panel-primary
+                        .panel-heading
+                            h4.panel-title {{year.year}} Scores
+                        .panel-body
+                            accordion
+                                accordion-group(heading="District: {{district.district}}", ng-repeat="district in year.districts")
+                                    .row(ng-repeat="row in district.contests")
+                                        .col-xs-12
+                                            a(href="/{{row.contestID}}") {{contestName(row)}}
                 .row
                     .panel.panel-primary
                         .panel-heading
-                            h3.panel-title Contest scores
+                            h4.panel-title Downloads
                         .panel-body
-                            .row(ng-repeat="row in contestList")
-                                .col-xs-12
-                                    a(href="/{{row.contestID}}") {{contestName(row)}}
-                .row
-                    .panel.panel-primary
-                        .panel-heading
-                            h3.panel-title Downloads
-                        .panel-body
-                            .row
-                                .col-xs-12
-                                    a(href="https://www.dropbox.com/s/oldwovalte78ysj/PatternScoringSetup.exe", download="setup.exe") D7/D8 scoring app
                             .row
                                 .col-xs-12
                                     a(href="http://amapatternscore.blob.core.windows.net/clickonce/setup.exe", download="setup.exe") MasterScoring app
+                            .row
+                                .col-xs-12
+                                    a(href="https://www.dropbox.com/s/kb1rw5uvyt7n0hm/ScribeAdapter.exe", download="ScribeAdapter.exe") Scribe Adapter
         .col-lg-10.col-md-10.col-sm-8.col-xs-12
             .panel.panel-primary
                 .panel-heading
@@ -41,18 +43,18 @@
                         .col-lg-5.col-md-4.col-sm-12.col-xs-12
                             img(src="/img/scoreController.jpg" class="img-responsive")
                     p
-                        | At the moment, the only fully supported scoring application is the D7/D8 scoring app originally written by Gordon Anderson of D8 as a
-                        | VB6 macro-based plugin to Excel and rewritten as a C# Visual Studio Tools for Office (VSTO) plugin to Excel by Peter Vogel of D7.
-                        | Click
-                        a(href="https://www.dropbox.com/s/oldwovalte78ysj/PatternScoringSetup.exe", download="setup.exe") here
-                        | to download a windows installer for the D7/D8 scoring app.
+                        | At the moment, the only fully supported scoring application is the&nbsp;
+                        a(href="http://amapatternscore.blob.core.windows.net/clickonce/setup.exe") Master Scoring App
+                        |  developed by Scott Smith in
+                        | NSRCA D1 to support the matrix format required by the NATS, though it also fully supports standard local contest formats, MAAC F3A formats, etc.
+                        | Click the Master Scoring link on the left to download the Master Scoring app for Windows.
                     p
-                        | Working with Scott Smith, we've built an adapter that runs alongside the MasterScoring app to deliver
-                        | electronic-scribe based scoring using
-                        a(href="http://amapatternscore.blob.core.windows.net/clickonce/setup.exe") MasterScoring
-                        | to manage the contest.  At the moment, this requires some manual
-                        | setup that Peter hasn't had a chance to build an installer, so if you are interested in using MasterScoring, please
-                        | contact Peter Vogel directly.
+                        | Working with Scott Smith, we've built an&nbsp;
+                        a(href="https://www.dropbox.com/s/kb1rw5uvyt7n0hm/ScribeAdapter.exe") adapter
+                        |  that runs alongside the MasterScoring app to deliver electronic-scribe based scoring and hosts a local scoreboard website
+                        | that can easily be displayed at the field using a simple 19" or larger LCD TV with an HDMI port connected to a simple
+                        | Raspberry Pi System-on-a-Chip computer (or any computer with an HDMI port) running the Chrome browser.  In fact, the adapter
+                        | application is also what's running on the site here for this page and all the contest scoreboards.
                     h3 Why?
                     p
                         | The first question that comes to many pilots is "why?"  Why change the paper-based scoring system we've been using for years?
@@ -79,6 +81,6 @@
                         | The easiest way to learn the scoring system is to use it in a low-pressure environment, while rolling the system out I try to be at the field
                         | with the system on the practice day prior to a contest for everyone to use it.  If that's not possible, it's been my experience that a brief
                         | intro like the video below and having someone help with the first 1-2 contestants during a contest will get you up to speed using the system
-                        | quite quickly.
+                        | quite quickly.  If you can manage an RC plane transmitter with switches, etc. to fly a plane, you can manage this controller!
                     p
                     iframe(id="ytplayer",type="text/html", width="640", height="375", allowfullscreen=true, src="https://www.youtube.com/embed/RIKztfcOmOo?autoplay=0&origin=www.patternscoring.com", frameborder="0")

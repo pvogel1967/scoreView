@@ -36,7 +36,15 @@ angular.module('myApp.filters').
 		var roundCount = 0;
 		for (var j=0; j<columnContestants.length; j++) {
 			var contestant = columnContestants[j];
-			if (contestant !== null) {
+			if (contestant !== null && contestant.scoringData.length > 0) {
+				var firstFlightNum = parseInt(contestant.scoringData[0].flightNumber);
+				var lastFlightNum = parseInt(contestant.scoringData[contestant.scoringData.length-1].flightNumber);
+				if (isNaN(firstFlightNum)  && lastFlightNum > 4) {
+					lastFlightNum = lastFlightNum - 3;
+				}
+				if (lastFlightNum > roundCount) {
+					roundCount = lastFlightNum;
+				}
 				if (contestant.scoringData.length > roundCount) {
 					roundCount = contestant.scoringData.length;
 				}
@@ -47,5 +55,28 @@ angular.module('myApp.filters').
 		}
 		return rounds;
     };
-  });
+  }).filter('scorefilter', function() {
+		return function (scoringData) {
+			var retData = [];
+			var currentRound = 1;
+			var carryOver = false
+			for (var j=0; j<scoringData.length;) {
+				var flightNum = parseInt(scoringData[j].flightNumber);
+				if (isNaN(flightNum)) {
+					flightNum = 1; //carryover from previous
+					carryOver = true;
+				} else if (carryOver) {
+					flightNum = flightNum - 3;
+				}
+				if (flightNum === currentRound) {
+					retData.push(scoringData[j]);
+					j++;
+				} else {
+					retData.push({normalizedScore:'-',roundDropped:false});
+				}
+				currentRound++;
+			}
+			return retData;
+		};
+	});
 

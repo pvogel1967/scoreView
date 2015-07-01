@@ -1,4 +1,5 @@
 var http = require('http');
+var request = require('request');
 var ss=require('simple-statistics');
 var noPublish = false;
 
@@ -107,32 +108,18 @@ exports.contestResults = function(req, res) {
 
 function sendToPatternScoring(uri, obj) {
     if (!noPublish) {
-        var data = JSON.stringify(obj)
-        var options = {
-            host: 'www.patternscoring.com',
-            port: 80,
-            path: uri,
+        request({
+            url:'http://www.patternscoring.com'+uri,
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Content-Length': Buffer.byteLength(data)
+            json: true,
+            body: obj
+        }, function(error, response, body) {
+            if (error !== null && error !== undefined) {
+                console.log('error calling patternscoring.com: ' + error);
+            } else {
+                console.log('response from patternscoring.com: ' + response.statusCode + ',' + response.body);
             }
-        };
-
-        //console.log('POSTing to http://www.patternscoring.com' + uri + ": " + data);
-        try {
-            var req = http.request(options, function (res) {
-                res.setEncoding('utf8');
-                res.on('data', function (chunk) {
-                    console.log("response from patternScoring: " + chunk);
-                });
-            });
-
-            req.write(data);
-            req.end();
-        } catch (err) {
-            console.log('Error saving to patternScoring: ' + err);
-        }
+        });
     }
 };
 
@@ -313,7 +300,8 @@ exports.contestantAllResults = function(req, res) {
         });
     });
 
-}
+};
+
 exports.contestantResults = function(req, res) {
     if (req.method == 'POST') {
         console.log("got POST of contestantResult: ");
@@ -471,13 +459,27 @@ exports.contestantResults = function(req, res) {
     }
 };
 
+function parseContestDate(a) {
+    var adate = a.date.split('/');
+    if (a.date.length > 10)  {
+        adate = a.date.split(' ')[0];
+        adate = adate.split('/');
+    }
+    if (adate[0].length < 2) {
+        adate[0] = '0' + adate[0];
+    }
+    if (adate[1].length < 2) {
+        adate[1] = '0' + adate[1];
+    }
+    return adate[2] + '-' + adate[0] + '-' + adate[1];
+}
 
 exports.contestList = function(req, res) {
     var query = {'location':{$not: /test/i}};
     if (req.query.includeTest == '1') {
         query = {};
     }
-    global.model.contestData.find(query, 'contestID location district contestName', function(err, contests) {
+    global.model.contestData.find(query, 'contestID location district nsrcaDistrict contestName date', function(err, contests) {
         console.log('contestList query callback');
         if (err != null) {
             res.statusCode = 500;
@@ -485,7 +487,62 @@ exports.contestList = function(req, res) {
             console.log(err);
             return;
         }
-        res.json(contests);
+        if (contests.length == 0) {
+            res.json(contests);
+        }
+        contests.sort(function(a,b) {
+            return Date.parse(parseContestDate(a)) - Date.parse(parseContestDate(b));
+        });
+
+        for (var i=0; i < contests.length; i++) {
+            var d = new Date(Date.parse(parseContestDate(contests[i])));
+            contests[i].year = d.getFullYear();
+        }
+        var ret = [];
+        ret[0] = {year: contests[0].year, districts:[
+            {district:"1", contests:[]},
+            {district:"2", contests:[]},
+            {district:"3", contests:[]},
+            {district:"4", contests:[]},
+            {district:"5", contests:[]},
+            {district:"6", contests:[]},
+            {district:"7", contests:[]},
+            {district:"8", contests:[]},
+            {district:"Canada", contests:[]}]};
+        var retIndex = 0;
+        for (var i = 0; i<contests.length; i++) {
+            if (contests[i].year != ret[retIndex].year) {
+                retIndex++;
+                ret[retIndex] = {year:contests[i].year, districts:[
+                    {district:"1", contests:[]},
+                    {district:"2", contests:[]},
+                    {district:"3", contests:[]},
+                    {district:"4", contests:[]},
+                    {district:"5", contests:[]},
+                    {district:"6", contests:[]},
+                    {district:"7", contests:[]},
+                    {district:"8", contests:[]},
+                    {district:"Canada", contests:[]}]};
+            }
+            var districtIndex = -1;
+            for (var j= 0; j < ret[retIndex].districts.length; j++) {
+                if (ret[retIndex].districts[j].district === contests[i].nsrcaDistrict) {
+                    districtIndex = j;
+                    break;
+                }
+            }
+            if (districtIndex > -1) {
+                ret[retIndex].districts[districtIndex].contests.push(contests[i].toObject());
+            }
+        }
+        for (var y = 0; y < ret.length; y++) {
+            for (var d=ret[y].districts.length-1; d >= 0; --d) {
+                if (ret[y].districts[d].contests.length < 1) {
+                    ret[y].districts.splice(d, 1);
+                }
+            }
+        }
+        res.json(ret);
     });
 };
 

@@ -18,7 +18,8 @@
     "simple-statistics": "^0.9.0",
     "socket.io": "^0.9.16",
     "touch": "0.0.3",
-    "xml2js": "^0.4.4"
+    "xml2js": "^0.4.4",
+    "request": "^2.58.0"
   },
   "devDependencies": {
     "mdns2": "^2.1.4"

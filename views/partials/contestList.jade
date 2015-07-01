@@ -1,3 +1,17 @@
-//
-   Created by pvogel on 6/25/2015.
+.container-fluid
+   .page-header
+   .row
+      .col-lg-12.col-md-12.col-sm-12.col-xs-12
+         .panel
+            .row(ng-repeat="year in contestList")
+               .panel.panel-primary
+                  .panel-heading
+                     h3.panel-title {{year.year}} Scores
+                  .panel-body
+                     accordion
+                        accordion-group(heading="District: {{district.district}}", ng-repeat="district in year.districts")
+                           .row(ng-repeat="row in district.contests")
+                              .col-xs-12
+                                 a(href="/{{row.contestID}}") {{contestName(row)}}
+
 
