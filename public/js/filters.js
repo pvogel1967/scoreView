@@ -58,10 +58,16 @@ angular.module('myApp.filters').
   }).filter('scorefilter', function() {
 		return function (scoringData) {
 			var retData = [];
+			if (scoringData === undefined) {
+				return retData;
+			}
 			var currentRound = 1;
 			var carryOver = false
 			for (var j=0; j<scoringData.length;) {
 				var flightNum = parseInt(scoringData[j].flightNumber);
+				if (flightNum === 0) {
+					flightNum = currentRound;
+				}
 				if (isNaN(flightNum)) {
 					flightNum = 1; //carryover from previous
 					carryOver = true;

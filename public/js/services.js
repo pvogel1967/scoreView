@@ -5,8 +5,8 @@
 
 angular.module('contest.services', ['ngResource']).
 	factory('contestService', function($resource) {
-		return $resource('/api/contest/:contestId', {contestId:'@contestId'}, {
-			query: {method:'GET', isArray:false}
+		return $resource('/api/contest/:contestId', {}, {
+			get: {method:'GET', cache:false, isArray:false}
 		});
 	}).
 	factory('socket', function($rootScope) {

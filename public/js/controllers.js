@@ -14,11 +14,35 @@ angular.module('myApp.controllers', ['angles', 'nvd3']).
         }
     }).
     controller('AppCtrl', function ($scope, $routeParams, $window, contestService, socket) {
-        $scope.contestData = contestService.query({contestId:$routeParams.id});
+        contestService.get({contestId:$routeParams.id},
+            function success(response) {
+                console.log('got contest success');
+                $scope.contestData = response;
+                if ($scope.contestData.contestName === undefined) {
+                    $scope.contestData.contestName = $scope.contestData.location;
+                }
+                $scope.classRows = $scope.computeRows($scope.contestData);
+            },
+            function error(errorResponse) {
+                console.log("get contest error: " + JSON.stringify(errorResponse));
+            }
+        );
         $scope.columnClass = ($window.innerWidth >= 1200) ? "col-lg-6 col-md-12" : "col-lg-6 col-md-12";
         socket.on('contestChanged', function(data) {
             console.log('got contestChanged event');
-            $scope.contestData = contestService.query({contestId:$routeParams.id});
+            contestService.get({contestId:$routeParams.id},
+                function success(response) {
+                    console.log('got contest success');
+                    $scope.contestData = response;
+                    if ($scope.contestData.contestName === undefined) {
+                        $scope.contestData.contestName = $scope.contestData.location;
+                    }
+                    $scope.classRows = $scope.computeRows($scope.contestData);
+                },
+                function error(errorResponse) {
+                    console.log("get contest error: " + JSON.stringify(errorResponse));
+                }
+            );
         });
 
         $scope.computeRows = function(data) {
@@ -56,9 +80,6 @@ angular.module('myApp.controllers', ['angles', 'nvd3']).
                 $scope.columnClass = (newWidth >= 1200) ? "col-lg-6 col-md-12" : "col-lg-6 col-md-12";
                 computeRows();
             }
-        });
-        $scope.$watch(function() { return $scope.contestData.classData;}, function(oldData, newData) {
-            $scope.classRows = $scope.computeRows($scope.contestData);
         });
         window.onresize=function() { $scope.$apply();}
     }).
