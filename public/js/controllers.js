@@ -73,7 +73,7 @@ angular.module('myApp.controllers', ['angles', 'nvd3']).
                 return { 'color': 'grey', 'text-decoration':'line-through'};
             }
             return {};
-        }
+        };
 
         $scope.$watch(function() { return $window.innerWidth;},function(newWidth, oldWidth) {
             if (newWidth != oldWidth) {
@@ -86,7 +86,14 @@ angular.module('myApp.controllers', ['angles', 'nvd3']).
     controller('ContestantCtrl', function ($scope, $routeParams, $window, contestantService, socket) {
 
         $scope.update = function() {
-            $scope.contestant = contestantService.query({contestId:$routeParams.id,classId:$routeParams.classcode,amaId:$routeParams.amaid});
+            contestantService.query({contestId:$routeParams.id,classId:$routeParams.classcode,amaId:$routeParams.amaid},
+                function success(response) {
+                    $scope.contestant = response;
+                },
+                function error(errorResponse) {
+                    console.log("get contestant error: " + JSON.stringify(errorResponse));
+                }
+            );
         };
 
         $scope.update();

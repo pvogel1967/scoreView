@@ -38,33 +38,33 @@ div(id=main)
                             thead
                                 tr
                                     th
-                                    th(colspan=2, ng-repeat="avg in s.flightAverages") Round {{$index+1}}
+                                    th(colspan=2, ng-repeat="avg in s.flightAverages track by $index") Round {{$index+1}}
                                     th(colspan=2,style="text-align:center") Overall
                                 tr
                                     th(style="text-align:left") Maneuver
-                                    th(ng-repeat="judge in judges(s)", ng-style="columnStyle($index)") Judge {{judge}}
+                                    th(ng-repeat="judge in judges(s) track by $index", ng-style="columnStyle($index)") Judge {{judge}}
                                     th(style="text-align:center") Average
                                     th(style="text-align:center") Cost
                             tbody
                                 tr(ng-repeat="maneuver in s.maneuvers")
                                     td(style="font-weight: bold"){{$index+1}}. {{maneuver.name}} (k={{maneuver.kfactor}})
-                                    td(ng-repeat="score in scores(s, maneuver)", ng-style="cellStyle(score)") {{score}}
+                                    td(ng-repeat="score in scores(s, maneuver) track by $index", ng-style="cellStyle(score)") {{score}}
                                     td(style="text-align:center") {{s.maneuverAverages[$index].toPrecision(3)}}
                                     td(style="text-align:center") {{((10-s.maneuverAverages[$index])*maneuver.kfactor).toPrecision(3)}}
                                 tr
                                     td
                                         b Raw Total
-                                    td(ng-repeat="subTotal in s.subTotals", ng-style="columnStyle($index)") {{subTotal.score}}
+                                    td(ng-repeat="subTotal in s.subTotals track by $index", ng-style="columnStyle($index)") {{subTotal.score}}
                                     td(colspan=2)
                                 tr
                                     td
                                         b Flight Average
-                                    td(colspan=2, style="text-align:center", ng-repeat="avg in s.flightAverages") {{avg.score}}
+                                    td(colspan=2, style="text-align:center", ng-repeat="avg in s.flightAverages track by $index") {{avg.score}}
                                     td(colspan=2)
                                 tr
                                     td
                                         b Percent of Possible
-                                    td(colspan=2, style="text-align:center", ng-repeat="percent in s.percentages") {{percent.score}}
+                                    td(colspan=2, style="text-align:center", ng-repeat="percent in s.percentages track by $index") {{percent.score}}
                                     td(colspan=2)
         .row
             .col-sm-8
