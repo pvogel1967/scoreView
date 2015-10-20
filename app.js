@@ -763,7 +763,8 @@ function createMatricesForContestant(contest, contestant, className) {
                 }
                 if (sequenceID !== undefined && sequenceID !== null) {
                     matrix.save(function (err, matrix) {
-                        console.log('saved matrix for round ' + matrix.Round + ', class ' + className + ', contestant ' + contestant.Name + ': ' + matrix.id);
+                        var matrixDesc = 'round ' + matrix.Round + ', class ' + className + ', contestant ' + contestant.Name + ' - ' + matrix.id;
+                        //console.log('saved matrix for ' + matrixDesc);
                         deleteScoreMatrixRows(matrix).then(function () {
                             var classID = classNameToIDMap[className];
                             var sequenceID = undefined;
@@ -782,12 +783,17 @@ function createMatricesForContestant(contest, contestant, className) {
                                 matrixRow.MasterScoreID = maneuver.MasterScoreID;
                                 matrixRow.Order = j;
                                 matrixRow.save(function (err, matrixRow) {
-                                    //console.log('saved scoreMatrixRow');
+                                    //console.log('saved scoreMatrixRow for ' + matrixDesc + ' / ' + maneuver.Name + 'order: ' + j.toString());
+                                    if (err !== null && err !== undefined) {
+                                        console.log("ERROR: saving matrixRow: " + err);
+                                    }
                                 });
                             }
-                        });
+                        }, function(error) {console.log("ERROR: trying to delete scoreMatrixRow for " + matrixDesc + ': ' + error);});
                     });
                 }
+            }, function(error) {
+                console.log("ERROR: trying to find existing scoreMatrix: " + error);
             });
         })(i);
 	}
