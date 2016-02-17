@@ -325,7 +325,7 @@ angular.module('myApp.controllers', ['angles', 'nvd3']).
         $scope.kFactorAverages = function(schedule) {
             var avgSeries = [];
             for (var i=0; i<schedule.kFactorAverages.length; i++) {
-                avgSeries[i] = schedule.kFactorAverages[i].tot/schedule.kFactorAverages[i].count;
+                avgSeries[i] = [schedule.kFactorAverages[i].kfactor, schedule.kFactorAverages[i].tot/schedule.kFactorAverages[i].count];
             }
             return [avgSeries];
         };

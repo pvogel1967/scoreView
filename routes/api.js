@@ -356,14 +356,10 @@ exports.contestantResults = function(req, res) {
                     var maneuverKAvg = [];
                     var opponentKAvg = [];
                     var maneuverStdDev = [];
-                    var kFactorAvg = [
-                        {"kfactor": 1, "tot": 0, "count": 0},
-                        {"kfactor": 2, "tot": 0, "count": 0},
-                        {"kfactor": 3, "tot": 0, "count": 0},
-                        {"kfactor": 4, "tot": 0, "count": 0},
-                        {"kfactor": 5, "tot": 0, "count": 0},
-                        {"kfactor": 6, "tot": 0, "count": 0}
-                    ];
+                    var kFactorAvg = [];
+                    for (var avgIndex = 0; avgIndex < 100; avgIndex++) {
+                        kFactorAvg[avgIndex] = {"kfactor": avgIndex+1, "tot": 0, "count": 0};
+                    }
                     var maneuverNames = [];
                     var maneuverRealNames = [];
                     var maneuverKFactor = [];
@@ -401,11 +397,14 @@ exports.contestantResults = function(req, res) {
                             maneuverRealNames[m] = maneuver.name;
                         }
                     }
-                    console.log("kFactorAvg length = " + kFactorAvg.length);
-                    while (kFactorAvg.length > 0 && kFactorAvg[kFactorAvg.length - 1].count == 0) {
-                        kFactorAvg.pop();
-                        console.log("kFactorAvg length = " + kFactorAvg.length);
+                    console.log("kFactorAvg length before winnowing = " + kFactorAvg.length);
+                    for(var avgIndex = kFactorAvg.length - 1; avgIndex >= 0; avgIndex--) {
+                        if(kFactorAvg[avgIndex].count === 0) {
+                            kFactorAvg.splice(avgIndex, 1);
+                            console.log("Removing kFactorAvg at index = " + avgIndex);
+                        }
                     }
+                    console.log("kFactorAvg final length = " + kFactorAvg.length);
                     sched.kFactorAverages = kFactorAvg;
                     sched.scoreCount = scoreCount;
                     sched.maneuverNames = maneuverNames;
