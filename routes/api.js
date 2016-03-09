@@ -490,7 +490,7 @@ exports.contestList = function(req, res) {
             res.json(contests);
         }
         contests.sort(function(a,b) {
-            return Date.parse(parseContestDate(a)) - Date.parse(parseContestDate(b));
+            return Date.parse(parseContestDate(b)) - Date.parse(parseContestDate(a));
         });
 
         for (var i=0; i < contests.length; i++) {
