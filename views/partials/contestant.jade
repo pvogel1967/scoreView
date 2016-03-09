@@ -38,7 +38,7 @@ div(id=main)
                             thead
                                 tr
                                     th
-                                    th(colspan=2, ng-repeat="avg in s.flightAverages track by $index") Round {{$index+1}}
+                                    th(colspan="{{judges(s).length}}", ng-repeat="avg in s.flightAverages track by $index") Round {{$index+1}}
                                     th(colspan=2,style="text-align:center") Overall
                                 tr
                                     th(style="text-align:left") Maneuver

@@ -414,7 +414,7 @@ angular.module('myApp.controllers', ['angles', 'nvd3']).
         $scope.judges = function(schedule) {
             var judges=[];
             for (var r=0; r<schedule.flightAverages.length; r++) {
-                for (var j =0; j < 2; j++) {
+                for (var j =0; j < schedule.maneuvers[0].flights[r].JudgeManeuverScores.length; j++) {
                     judges.push(schedule.maneuvers[0].flights[r].JudgeManeuverScores[j].JudgeId);
                 }
             }
@@ -424,7 +424,7 @@ angular.module('myApp.controllers', ['angles', 'nvd3']).
         $scope.scores = function(s, maneuver) {
             var scores=[];
             for (var r=0; r<s.flightAverages.length; r++) {
-                for (var j=0; j < 2; j++) {
+                for (var j=0; j < maneuver.flights[r].JudgeManeuverScores.length; j++) {
                     scores.push(maneuver.flights[r].JudgeManeuverScores[j].score);
                 }
             }
