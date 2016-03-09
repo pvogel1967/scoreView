@@ -38,7 +38,7 @@ div(id=main)
                             thead
                                 tr
                                     th
-                                    th(colspan="{{judges(s).length}}", ng-repeat="avg in s.flightAverages track by $index") Round {{$index+1}}
+                                    th(colspan="{{judgeCount(s)}}", ng-repeat="avg in s.flightAverages track by $index") Round {{$index+1}}
                                     th(colspan=2,style="text-align:center") Overall
                                 tr
                                     th(style="text-align:left") Maneuver
@@ -55,16 +55,16 @@ div(id=main)
                                     td
                                         b Raw Total
                                     td(ng-repeat="subTotal in s.subTotals track by $index", ng-style="columnStyle($index)") {{subTotal.score}}
-                                    td(colspan=2)
+                                    td(colspan="{{judgeCount(s)}}")
                                 tr
                                     td
                                         b Flight Average
-                                    td(colspan=2, style="text-align:center", ng-repeat="avg in s.flightAverages track by $index") {{avg.score}}
+                                    td(colspan="{{judgeCount(s)}}", style="text-align:center", ng-repeat="avg in s.flightAverages track by $index") {{avg.score}}
                                     td(colspan=2)
                                 tr
                                     td
                                         b Percent of Possible
-                                    td(colspan=2, style="text-align:center", ng-repeat="percent in s.percentages track by $index") {{percent.score}}
+                                    td(colspan="{{judgeCount(s)}}", style="text-align:center", ng-repeat="percent in s.percentages track by $index") {{percent.score}}
                                     td(colspan=2)
         .row
             .col-sm-8

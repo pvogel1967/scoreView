@@ -409,7 +409,9 @@ angular.module('myApp.controllers', ['angles', 'nvd3']).
             };
         };
 
-
+        $scope.judgeCount = function(schedule) {
+            return schedule.maneuvers[0].flights[0].JudgeManeuverScores.length;
+        }
 
         $scope.judges = function(schedule) {
             var judges=[];
