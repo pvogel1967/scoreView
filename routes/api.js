@@ -1,6 +1,8 @@
 var http = require('http');
 var request = require('request');
+var xml2js = require('xml2js');
 var ss=require('simple-statistics');
+var uuid = require('node-uuid');
 var noPublish = false;
 
 exports.judgeScoresSaved = function (req, res) {
@@ -104,6 +106,67 @@ exports.contestResults = function(req, res) {
             res.json(contest);
         });
     }
+}
+
+exports.processContestResults = function(req, res) {
+    if (req.method == 'POST') {
+        var contestID = req.params.contestId;
+        if (contestID === undefined || contestID === null) {
+            contestID = uuid.v4();
+        }
+        if (req.is('json')) {
+            contestResults = JSON.parse(req.body);
+            var contestData = contestResults.contestData;
+            for (var i = 0; i < contestData.classData.length; i++) {
+                var classData = contestData.classData[i];
+                classData.contestants = [];
+                for (var j = 0; j < classData.contestant.length; j++) {
+                    classData.contestants[j] = classData.contestant[j];
+                    classData.contestants[j].realAmaNumber = classData.contestants[j].amaNumber;
+                    classData.contestants[j].name = classData.contestants[j].fullName;
+                }
+                delete classData['contestant'];
+            }
+            handleContestJSON(contestData, contestID);
+        } else if (req.is('xml')) {
+            var parser = new xml2js.Parser({explicitArray: false});
+            console.log(req.rawBody);
+            parser.parseString(req.rawBody, function (err, result) {
+                //console.dir(result);
+                var contestData = result.contestResultDocument.contestData;
+                contestData.classData = contestData.classData.class;
+                for (var i = 0; i < contestData.classData.length; i++) {
+                    var classData = contestData.classData[i];
+                    classData.contestants = [];
+                    for (var j = 0; j < classData.contestant.length; j++) {
+                        classData.contestants[j] = classData.contestant[j];
+                        classData.contestants[j].realAmaNumber = classData.contestants[j].amaNumber;
+                        classData.contestants[j].name = classData.contestants[j].fullName;
+                        classData.contestants[j].scoringData = classData.contestants[j].scoringData.flightInfo;
+                    }
+                    delete classData['contestant'];
+                }
+                console.dir(contestData);
+                handleContestJSON(contestData, contestID);
+            })
+        }
+    } else {
+        res.statusCode = 400;
+        res.end('POST only API');
+        return;
+    }
+}
+
+function handleContestJSON(contestData, contestID) {
+    //var promise = deleteContestDataByContestID(contestID);
+    contestData.contestID = contestID;
+
+    console.log('preparing to save contestData to mongo');
+    var tmp = new model.contestData(contestData);
+    tmp.save(function (err, contestData) {
+        console.log('saved contestData err=' + err);
+    });
+
 }
 
 function sendToPatternScoring(uri, obj) {
@@ -507,7 +570,8 @@ exports.contestList = function(req, res) {
             {district:"6", contests:[]},
             {district:"7", contests:[]},
             {district:"8", contests:[]},
-            {district:"Canada", contests:[]}]};
+            {district:"Canada", contests:[]},
+            {district:"NATS", contests:[]}]};
         var retIndex = 0;
         for (var i = 0; i<contests.length; i++) {
             if (contests[i].year != ret[retIndex].year) {
@@ -521,7 +585,8 @@ exports.contestList = function(req, res) {
                     {district:"6", contests:[]},
                     {district:"7", contests:[]},
                     {district:"8", contests:[]},
-                    {district:"Canada", contests:[]}]};
+                    {district:"Canada", contests:[]},
+                    {district:"NATS", contests:[]}]};
             }
             var districtIndex = -1;
             for (var j= 0; j < ret[retIndex].districts.length; j++) {

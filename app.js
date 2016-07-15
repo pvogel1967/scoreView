@@ -42,6 +42,8 @@ var personMap = {};
 var judgeMap = {};
 var contestantNumToContestantId = {};
 var judgeNumToPersonId = {};
+var judgeHasContestant = {};
+var allJudgeNums = [];
 var promises = [];
 
 var parser = new xml2js.Parser();
@@ -54,9 +56,25 @@ app.set('port', process.env.PORT || 80);
 app.set('views', __dirname + '/views');
 app.set('view engine', 'jade');
 app.use(express.logger('dev'));
+var public = path.join(__dirname,'public');
+app.use(express.static(public));
 app.use(express.bodyParser());
-//app.use(express.methodOverride());
-app.use(express.static(path.join(__dirname,'public')));
+
+app.use('/api/processContestResults', function(req, res, next) {
+    if (!req.is('xml')) next();
+    req.rawBody = '';
+    req.setEncoding('utf8');
+
+    req.on('data', function(chunk) {
+        req.rawBody += chunk;
+    });
+
+    req.on('end', function() {
+        next();
+    });
+});
+
+//app.use('/img', express.static(img));
 app.use(app.router);
 //app.set('env', 'production');
 // production only
@@ -205,6 +223,7 @@ app.get('/api/readContestResults', function(req, res) {
     var promises = [];
     processContestResultsData(importFilePath, promises);
 });
+//app.post('/api/processContestResults/:contestId', api.processContestResults);
 app.get('/api/secured/pilot/:amaid/class/:classcode', api.contestantAllResults);
 
 // redirect all others to the index (HTML5 history)
@@ -918,14 +937,16 @@ function processContestData(result, callbackFn) {
                 var person = result.ContestData.Person[i]
                 //console.log('processing person: ' + person.ID[0]);
                 var amaNumber = person.AMANumber[0];
-                if (person.JudgeNumber !== null && person.JudgeNumber !== undefined) {
-                    //judgeMap[person.ID[0]] = person.JudgeNumber[0];
-                    //judgeNumToPersonId[person.JudgeNumber] = person.ID[0];
-                }
-                var promise = findPilotByAMA(amaNumber, person);
+                 var promise = findPilotByAMA(amaNumber, person);
                 promise.then(function (result) {
                     var pilot = result.pilot;
                     var person = result.person;
+                    if (person.JudgeNumber !== null && person.JudgeNumber !== undefined) {
+                        judgeHasContestant['j' + person.JudgeNumber] = false;
+                        allJudgeNums.push(person.JudgeNumber);
+                        judgeNumToPersonId[person.JudgeNumber] = person.ID[0];
+                    }
+
                     if (pilot === null) {
                         //console.dir(person);
                         console.log('Did not find pilot: ' + amaNumber);
@@ -981,9 +1002,11 @@ function processContestData(result, callbackFn) {
                 //console.log('completed person map')
                 //console.log('judgeMap');
                 //console.dir(judgeMap);
+                promises = [];
                 for (var i = 0; i < result.ContestData.Contestant.length; i++) {
                     var contestant = result.ContestData.Contestant[i];
                     var promise = findContestantByJudgeNum(contestant.ContestantNumber[0], contestant);
+                    promises.push(promise);
                     promise.then(function (findResult) {
                         var existingContestant = findResult.contestant;
                         var contestant = findResult.data;
@@ -992,7 +1015,9 @@ function processContestData(result, callbackFn) {
                                 existingContestant.SequenceID = contestant.SequenceID[0];
                             }
                             console.log('found contestant for judgeNum:' + existingContestant.JudgeNumber);
+                            allJudgeNums.push(existingContestant.JudgeNumber);
                             judgeNumToPersonId[existingContestant.JudgeNumber] = contestant.PersonID[0];
+                            judgeHasContestant[existingContestant.JudgeNumber] = true;
                             contestantNumToContestantId[existingContestant.JudgeNumber] = existingContestant.MasterScoreID;
                             existingContestant.save(function (err, existingContestant) {
                                 console.log('Saved new contestant');
@@ -1008,7 +1033,9 @@ function processContestData(result, callbackFn) {
                             newContestant.AMANumber = pilot.AMA;
                             newContestant.ContestID = contest.ContestID;
                             newContestant.JudgeNumber = contestant.ContestantNumber[0];
+                            allJudgeNums.push(newContestant.JudgeNumber);
                             judgeNumToPersonId[newContestant.JudgeNumber] = contestant.PersonID[0];
+                            judgeHasContestant[newContestant.JudgeNumber] = true;
                             newContestant.MasterScoreID = contestant.ID[0];
                             if (contestant.SequenceID !== undefined && contestant.SequenceID !== null) {
                                 newContestant.SequenceID = contestant.SequenceID[0];
@@ -1030,6 +1057,26 @@ function processContestData(result, callbackFn) {
                         }
                     });
                 }
+                Q.all(promises).then(function() {
+                    for (var i=0; i<allJudgeNums.length; i++) {
+                        if (!judgeHasContestant[allJudgeNums[i]]) {
+                            var newContestant = new model.contestant;
+                            var pilot = personMap[judgeNumToPersonId[allJudgeNums[i]]];
+                            newContestant.PilotID = pilot.id;
+                            newContestant.Name = pilot.Name;
+                            newContestant.AMANumber = pilot.AMA;
+                            newContestant.ContestID = contest.ContestID;
+                            newContestant.JudgeNumber = allJudgeNums[i];
+                            newContestant.Class = "Judge";
+                            newContestant.Frequency = '2.4GHz';
+                            newContestant.MasterScoreID = judgeNumToPersonId[allJudgeNums[i]];
+                            judgeHasContestant[newContestant.JudgeNumber] = true;
+                            newContestant.save(function (err, newContestant) {
+                                console.log('Saved new JUDGE contestant for judge #' + newContestant.JudgeNumber);
+                            });
+                        }
+                    }
+                });
                 contest.save(function () {
                     console.log('saved ' + contestState + ' contest');
                     updateCurrentContest(contest);
