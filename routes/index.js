@@ -11,7 +11,12 @@ exports.index = function(req, res) {
         console.log('render index for /home');
         res.render('index');
         return;
-    } 
+    }
+    if (req.url === '/iframe') {
+        console.log('render iframe for /iframe');
+        res.render('iframe', {'openDistrict':req.query.district});
+        return;
+    }
     if (req.url === '/admin') {
         console.log('render index for /admin');
         res.render('index', {'serverIP':global.serverIP});

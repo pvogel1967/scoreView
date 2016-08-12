@@ -522,10 +522,19 @@ exports.contestantResults = function(req, res) {
 };
 
 function parseContestDate(a) {
-    var adate = a.date.split('/');
-    if (a.date.length > 10)  {
+    var adate = a.date;
+    console.log('Parsing date: ' + a.date);
+    if (a.date.length > 10) {
         adate = a.date.split(' ')[0];
+        console.log('post space split adate: "' + adate + '"');
+    }
+
+    var numdash = (adate.match(/-/g)||[]).length;
+    console.log('numdash: ' + numdash)
+    if (numdash === 0) {
         adate = adate.split('/');
+    } else {
+        adate = adate.split('-');
     }
     if (adate[0].length < 2) {
         adate[0] = '0' + adate[0];
@@ -533,6 +542,7 @@ function parseContestDate(a) {
     if (adate[1].length < 2) {
         adate[1] = '0' + adate[1];
     }
+    console.log('parsed contest date: ' + a.date + ' to ' + adate[2] + '-' + adate[0] + '-' + adate[1]);
     return adate[2] + '-' + adate[0] + '-' + adate[1];
 }
 

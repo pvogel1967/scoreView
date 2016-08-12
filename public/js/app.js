@@ -24,6 +24,10 @@ angular.module('myApp', [
                 templateUrl: '/partials/home',
                 controller: 'HomeCtrl'
             }).
+            when('/iframe', {
+                templateUrl: '/partials/contestList',
+                controller: 'HomeCtrl'
+            }).
             when('/contestList', {
                 templateUrl: '/partials/contestList',
                 controller: 'HomeCtrl'

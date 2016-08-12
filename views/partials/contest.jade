@@ -1,51 +1,59 @@
 .container-fluid
-	.page-header
-		.row
-			| &nbsp;
-		.row
-			.col-lg-2.col-md-2.col-sm-6.col-xs-12
-				h4
-					.label.label-primary Location:
-			.col-lg-4.col-md-4.col-sm-6.col-xs-12
-				h4 {{contestData.contestName}}
-			.col-lg-2.col-md-3.col-sm-6.col-xs-12
-				h4
-					.label.label-primary Contest Director:
-			.col-lg-4.col-md-3.col-sm-6.col-xs-12
-				h4 {{contestData.contestDirector}}
-		.row
-			.col-lg-1.col-md-1.col-sm-6.col-xs-12
-				h4
-					.label.label-primary District:
-			.col-lg-1.col-md-1.col-sm-6.col-xs-12
-				h4 {{contestData.nsrcaDistrict}}
-			.col-lg-2.col-md-1.col-sm-6.col-xs-12
-				h4
-					.label.label-primary Server IP:
-			.col-lg-2.col-md-3.col-sm-6.col-xs-12
-				h4 #{serverIP}
-			.col-lg-2.col-md-3.col-sm-6.col-xs-12
-				h4
-					.label.label-primary Date:
-			.col-lg-4.col-md-3.col-sm-6.col-xs-12
-				h4 {{contestData.date}}
-	.row(ng-repeat="row in classRows")
-		.div(ng-repeat="column in row",ng-class="columnClass")
-			.panel.panel-primary
-				.panel-heading
-					h3.panel-title {{column.name}}
-				.table-responsive
-					table.table.table-striped.table-condensed.table-hover
-						thead
-							tr
-								th Name
-								th Final Score
-								th(ng-repeat="round in column.contestants | roundfilter") Round {{round}}
-						tbody
-							tr(ng-repeat="contestant in column.contestants")
-								td 
-									a(ng-href="/{{contestData.contestID}}/class/{{column.code}}/contestant/{{contestant.realAmaNumber}}") {{contestant.name}}
-								td {{contestant.finalScore}}
-								td(ng-repeat="score in contestant.scoringData | scorefilter", ng-style="droppedStyle(score)") {{score.normalizedScore}}
+    .page-header
+        .row
+            | &nbsp;
+        .row
+            .col-lg-2.col-md-2.col-sm-6.col-xs-12
+                h4
+                    .label.label-primary Location:
+            .col-lg-4.col-md-4.col-sm-6.col-xs-12
+                h4 {{contestData.contestName}}
+            .col-lg-2.col-md-3.col-sm-6.col-xs-12
+                h4
+                    .label.label-primary Contest Director:
+            .col-lg-4.col-md-3.col-sm-6.col-xs-12
+                h4 {{contestData.contestDirector}}
+        .row
+            .col-lg-1.col-md-1.col-sm-6.col-xs-12
+                h4
+                    .label.label-primary District:
+            .col-lg-1.col-md-1.col-sm-6.col-xs-12
+                h4 {{contestData.nsrcaDistrict}}
+            .col-lg-2.col-md-1.col-sm-6.col-xs-12
+                h4
+                    .label.label-primary Server IP:
+            .col-lg-2.col-md-3.col-sm-6.col-xs-12
+                h4 #{serverIP}
+            .col-lg-2.col-md-3.col-sm-6.col-xs-12
+                h4
+                    .label.label-primary Date:
+            .col-lg-4.col-md-3.col-sm-6.col-xs-12
+                h4 {{contestData.date}}
+    .row(ng-repeat="row in classRows")
+        .div(ng-repeat="column in row",ng-class="columnClass")
+            .panel.panel-primary
+                .panel-heading
+                    h3.panel-title {{column.name}}
+                .table-responsive
+                    table.table.table-striped.table-condensed.table-hover
+                        thead
+                            tr
+                                th Name
+                                th Final Score
+                                th(ng-repeat="round in column.contestants | roundfilter") Round {{round}}
+                        tbody
+                            tr(ng-repeat="contestant in column.contestants")
+                                td
+                                    a(ng-href="/{{contestData.contestID}}/class/{{column.code}}/contestant/{{contestant.realAmaNumber}}") {{contestant.name}}
+                                td {{contestant.finalScore}}
+                                td(ng-repeat="score in contestant.scoringData | scorefilter", ng-style="droppedStyle(score)") {{score.normalizedScore}}
+    .row
+        .div
+            table
+                tbody
+                    tr
+                        td &nbsp;
+                        td
+                            a.btn.btn-primary(href="/iframe", role="button") Back to list
 
 
