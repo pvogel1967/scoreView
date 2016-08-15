@@ -402,15 +402,15 @@ exports.contestantResults = function(req, res) {
                 return;
             }
             var result = res1.toObject();
-            var s = 0;
-            if (result.schedules.length > 1 && (classCodeSuffix === 'F' || classCodeSuffix === 'S') ) {
-                result.schedules[0] = result.schedules[1];
-                result.schedules.length = 1;
-            }
-            if (result.schedules.length > 1 && (classCodeSuffix === 'P')) {
-                result.schedules.length = 1;
-            }
-            (function(s) {
+            global.model.contestantResult.findOne({"contestID":req.params.id, "className":tmpClassCode, "finalPlacement":"1"}, function(err, opponent) {
+                if (err != null) {
+                    console.log('unable to find contestant detailed results #1 in class:' + result.className + ' -- err: ' + err);
+                } else if (opponent === null || opponent.schedules === null || opponent.schedules[0] === null || opponent.schedules[0].maneuvers === null) {
+                    console.log('got empty results for opponent');
+                } else {
+                    console.log('got #1 opponent: ' + opponent.amaNumber);
+                }
+                for (var s=0; s<result.schedules.length; s++) {
                     var scoreCount = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
                     var overallAvgDiff = [];
                     var maneuverAvg = [];
@@ -421,7 +421,7 @@ exports.contestantResults = function(req, res) {
                     var maneuverStdDev = [];
                     var kFactorAvg = [];
                     for (var avgIndex = 0; avgIndex < 100; avgIndex++) {
-                        kFactorAvg[avgIndex] = {"kfactor": avgIndex+1, "tot": 0, "count": 0};
+                        kFactorAvg[avgIndex] = {"kfactor": avgIndex + 1, "tot": 0, "count": 0};
                     }
                     var maneuverNames = [];
                     var maneuverRealNames = [];
@@ -452,7 +452,7 @@ exports.contestantResults = function(req, res) {
                                 }
                             }
                             maneuverAvg[m] = ss.mean(maneuverData);
-                            maneuverStdDev[m]  = ss.standard_deviation(maneuverData);
+                            maneuverStdDev[m] = ss.standard_deviation(maneuverData);
                             maneuverVariance[m] = ss.variance(maneuverData);
                             maneuverKAvg[m] = maneuverAvg[m] * maneuver.kfactor;
                             maneuverKFactor[m] = maneuver.kfactor;
@@ -461,8 +461,8 @@ exports.contestantResults = function(req, res) {
                         }
                     }
                     console.log("kFactorAvg length before winnowing = " + kFactorAvg.length);
-                    for(var avgIndex = kFactorAvg.length - 1; avgIndex >= 0; avgIndex--) {
-                        if(kFactorAvg[avgIndex].count === 0) {
+                    for (var avgIndex = kFactorAvg.length - 1; avgIndex >= 0; avgIndex--) {
+                        if (kFactorAvg[avgIndex].count === 0) {
                             kFactorAvg.splice(avgIndex, 1);
                             console.log("Removing kFactorAvg at index = " + avgIndex);
                         }
@@ -480,43 +480,31 @@ exports.contestantResults = function(req, res) {
                     for (var m = 0; m < sched.maneuvers.length; m++) {
                         sched.maneuverDiff[m] = (maneuverAvg[m] - sched.overallAvg) * maneuverKFactor[m];
                     }
-
-                    console.log('get opponent results: {"contestID":"' + req.params.id + '","finalPlacement":"1","className":"' + tmpClassCode + '"}');
-                    global.model.contestantResult.findOne({"contestID": req.params.id, "finalPlacement": "1", "className": tmpClassCode}, function (err, opponent) {
-                        if (err != null) {
-                            console.log('unable to find contestant detailed results #1 in class:' + result.className + ' -- err: ' + err);
-                        } else if (opponent === null || opponent.schedules === null || opponent.schedules[0] === null || opponent.schedules[0].maneuvers === null) {
-                            console.log('got empty results for opponent');
-                        } else {
-                            console.log('got #1 opponent: ' + opponent.amaNumber);
-                            if (opponent.schedules.length > 1 && classCodeSuffix === 'F') {
-                                opponent.schedules[0] = opponent.schedules[1];
-                                opponent.schedules.length = 1;
-                            }
-                            for (var m = 0; m < opponent.schedules[s].maneuvers.length; m++) {
-                                var mTot = 0;
-                                var mCount = 0;
-                                var maneuver = opponent.schedules[s].maneuvers[m];
-                                if (maneuver != null) {
-                                    for (var r = 0; r < maneuver.flights.length; r++) {
-                                        for (var j = 0; j < 2; j++) {
-                                            var score = maneuver.flights[r].JudgeManeuverScores[j].score;
-                                            mTot += score;
-                                            mCount++;
-                                        }
+                    if (opponent !== null && opponent.schedules.length > s) {
+                        for (var m = 0; m < opponent.schedules[s].maneuvers.length; m++) {
+                            var mTot = 0;
+                            var mCount = 0;
+                            var maneuver = opponent.schedules[s].maneuvers[m];
+                            if (maneuver != null) {
+                                for (var r = 0; r < maneuver.flights.length; r++) {
+                                    for (var j = 0; j < 2; j++) {
+                                        var score = maneuver.flights[r].JudgeManeuverScores[j].score;
+                                        mTot += score;
+                                        mCount++;
                                     }
-                                    opponentAvg[m] = mTot / mCount;
-                                    opponentKAvg[m] = opponentAvg[m] * maneuver.kfactor;
-                                    opponentAvg[m] = opponentAvg[m].toPrecision(3);
-                                    opponentKAvg[m] = opponentKAvg[m].toPrecision(3);
                                 }
+                                opponentAvg[m] = mTot / mCount;
+                                opponentKAvg[m] = opponentAvg[m] * maneuver.kfactor;
+                                opponentAvg[m] = opponentAvg[m].toPrecision(3);
+                                opponentKAvg[m] = opponentKAvg[m].toPrecision(3);
                             }
-                            sched.opponentAverages = opponentAvg;
-                            result.schedules[s] = sched;
-                            res.json(result);
                         }
-                    });
-                })(s);
+                        sched.opponentAverages = opponentAvg;
+                    }
+                    result.schedules[s] = sched;
+                }
+                res.json(result);
+            });
         });
     }
 };

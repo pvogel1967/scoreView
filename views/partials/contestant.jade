@@ -28,11 +28,11 @@ div(id=main)
                         h3
                             span.label.label-primary AMA Points:
                             | {{contestant.amaPoints}}
-        .row
+        .row(ng-repeat="s in contestant.schedules")
             .col-sm-12
-                .panel.panel-primary(ng-repeat="s in contestant.schedules")
+                .panel.panel-primary
                     .panel-heading
-                        h4.panel-title Raw Results ({{$index}})
+                        h4.panel-title Raw Results {{s.name}} ({{$index}})
                     .panel-body
                         table.table-condensed.table-striped.table-bordered.col-md-12
                             thead
@@ -66,24 +66,24 @@ div(id=main)
                                         b Percent of Possible
                                     td(colspan="{{judgeCount(s)}}", style="text-align:center", ng-repeat="percent in s.percentages track by $index") {{percent.score}}
                                     td(colspan=2)
-        .row
+        .row(ng-repeat="s in contestant.schedules")
             .col-sm-8
-                .panel.panel-primary(ng-repeat="s in contestant.schedules")
+                .panel.panel-primary
                     .panel-heading
-                        h4.panel-title Score Histogram
+                        h4.panel-title Score Histogram {{s.name}}
                     .panel-body
-                        div(ui-chart="scoreHistogram", data="[s.scoreCount]", chart-options="scoreHistogramOptions")
+                        div(ui-chart="scoreHistogram{{$index}}", data="[s.scoreCount]", chart-options="scoreHistogramOptions")
             .col-sm-4
-                .panel.panel-primary(ng-repeat="s in contestant.schedules")
+                .panel.panel-primary
                     .panel-heading
-                        h4.panel-title Avg by k-Factor
+                        h4.panel-title Avg by k-Factor {{s.name}}
                     .panel-body
-                        div(ui-chart="kFactorAverages", data="kFactorAverages(s)", chart-options="kFactorOptions")
-        .row
+                        div(ui-chart="kFactorAverages{{$index}}", data="kFactorAverages(s)", chart-options="kFactorOptions")
+        .row(ng-repeat="s in contestant.schedules")
             .col-sm-8
-                .panel.panel-primary(ng-repeat="s in contestant.schedules")
+                .panel.panel-primary
                     .panel-heading
-                        h4.panel-title Timeline (diff from average score * kFactor) Avg = {{s.overallAvg.toPrecision(4)}}
+                        h4.panel-title Timeline {{s.name}} (diff from average score * kFactor) Avg = {{s.overallAvg.toPrecision(4)}}
                     .panel-body
                         //div(nvd3, data="timelineData(s)", options="timelineOptions")
                         nvd3(options="timelineOptions()" data="timelineData(s)")
@@ -92,12 +92,12 @@ div(id=main)
             .col-sm-6
                 .panel.panel-primary
                     .panel-heading
-                        h4.panel-title Avg vs. Top Pilot
+                        h4.panel-title Avg vs. Top Pilot {{s.name}}
                     .panel-body
                         canvas(radarchart, options="radarOptions", data="radarRawFn(s)", width="winWidth()", height="winWidth()")
             .col-sm-6
                 .panel.panel-primary
                     .panel-heading
-                        h4.panel-title Avg with KFactor vs. Top Pilot
+                        h4.panel-title Avg with KFactor vs. Top Pilot {{s.name}}
                     .panel-body
                         canvas(radarchart, options="radarKOptions(s)", data="radarKfactorFn(s)", width="winWidth()", height="winWidth()")
