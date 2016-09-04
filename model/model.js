@@ -145,6 +145,7 @@ exports.pilot = mongoose.model('Pilot', pilotSchema);
 
 
 var contestDataSchema = new Schema({
+    apiKey: String,
     contestDirector: String,
     contestName: String,
     date: String,
@@ -188,6 +189,7 @@ contestDataSchema.index({contestID:1});
 exports.contestData = mongoose.model('ContestData', contestDataSchema);
 
 var contestantResultSchema = new Schema({
+    apiKey:String,
     fullName:String,
     amaNumber:String,
     className:String,
@@ -222,3 +224,11 @@ contestantResultSchema.index({contestID:1, amaNumber:1});
 contestantResultSchema.index({contestID: 1, amaNumber:1, className:1});
 contestantResultSchema.index({amaNumber:1, className:1});
 exports.contestantResult = mongoose.model('ContestantResult', contestantResultSchema);
+
+var apiUserSchema = new Schema({
+    userName:String,
+    apiKey:String,
+    userEmail:String
+});
+apiUserSchema.index({apiKey:1});
+exports.apiUser = mongoose.model('ApiUser', apiUserSchema);

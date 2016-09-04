@@ -3,6 +3,7 @@ var request = require('request');
 var xml2js = require('xml2js');
 var ss=require('simple-statistics');
 var uuid = require('node-uuid');
+var Q = require('q');
 var noPublish = false;
 
 exports.judgeScoresSaved = function (req, res) {
@@ -108,64 +109,266 @@ exports.contestResults = function(req, res) {
     }
 }
 
+
 exports.processContestResults = function(req, res) {
+    console.dir(global);
     if (req.method == 'POST') {
-        var contestID = req.params.contestId;
-        if (contestID === undefined || contestID === null) {
-            contestID = uuid.v4();
-        }
-        if (req.is('json')) {
-            contestResults = JSON.parse(req.body);
-            var contestData = contestResults.contestData;
-            for (var i = 0; i < contestData.classData.length; i++) {
-                var classData = contestData.classData[i];
-                classData.contestants = [];
-                for (var j = 0; j < classData.contestant.length; j++) {
-                    classData.contestants[j] = classData.contestant[j];
-                    classData.contestants[j].realAmaNumber = classData.contestants[j].amaNumber;
-                    classData.contestants[j].name = classData.contestants[j].fullName;
+        if (req.headers['authorization'] !== null && req.headers['authorization'] !== undefined) {
+            console.log("Got Authorization header: " + req.headers['authorization']);
+            global.model.apiUser.findOne({"apiKey": req.headers['authorization']}, function (err, apiUser) {
+                if (err !== null && err !== undefined) {
+                    console.log("Error with finding apiKey, results not processed: ", err);
+                    res.statusCode = 401;
+                    res.end("Unauthorized")
+                    return;
                 }
-                delete classData['contestant'];
-            }
-            handleContestJSON(contestData, contestID);
-        } else if (req.is('xml')) {
-            var parser = new xml2js.Parser({explicitArray: false});
-            console.log(req.rawBody);
-            parser.parseString(req.rawBody, function (err, result) {
-                //console.dir(result);
-                var contestData = result.contestResultDocument.contestData;
-                contestData.classData = contestData.classData.class;
-                for (var i = 0; i < contestData.classData.length; i++) {
-                    var classData = contestData.classData[i];
-                    classData.contestants = [];
-                    for (var j = 0; j < classData.contestant.length; j++) {
-                        classData.contestants[j] = classData.contestant[j];
-                        classData.contestants[j].realAmaNumber = classData.contestants[j].amaNumber;
-                        classData.contestants[j].name = classData.contestants[j].fullName;
-                        classData.contestants[j].scoringData = classData.contestants[j].scoringData.flightInfo;
+                if ((apiUser === null || apiUser === undefined) && (!global.localAllowed || req.headers.authorization !== 'local')) {
+                    console.log("Unauthorized call to processContest results, no such apiKey found");
+                    res.statusCode=401;
+                    res.end("Unauthorized");
+                    return;
+                }
+                if (apiUser === null || apiUser === undefined) {
+                    apiUser = {"apiKey":"local", "userName":"local user"};
+                }
+                console.log("Got contestant results with valid apiKey for user: " + apiUser.userName + ", processing");
+                var contestID = req.params.contestId;
+                if (contestID === undefined || contestID === null) {
+                    contestID = uuid.v4();
+                }
+                if (req.is('json')) {
+                    console.dir(req.body);
+                    //contestResults = JSON.parse(req.body);
+                    contestResults = req.body;
+                    contestResults.apiKey = apiUser.apiKey;
+                    console.dir(contestResults);
+                    var contestData = contestResults.contestData;
+                    for (var i = 0; i < contestData.classData.length; i++) {
+                        var classData = contestData.classData[i];
+                        classData.contestants = [];
+                        for (var j = 0; j < classData.contestant.length; j++) {
+                            classData.contestants[j] = classData.contestant[j];
+                            classData.contestants[j].realAmaNumber = classData.contestants[j].amaNumber;
+                            classData.contestants[j].name = classData.contestants[j].fullName;
+                        }
+                        delete classData['contestant'];
                     }
-                    delete classData['contestant'];
+                    var handlePromise = handleContestJSON(contestData, contestID);
+                    handlePromise.then(function(contestID) {
+                        res.statusCode = 200;
+                        res.json({'contestID': contestID});
+                    });
+                } else if (req.is('xml')) {
+                    var parser = new xml2js.Parser({explicitArray: false});
+                    //console.log(req.rawBody);
+                    parser.parseString(req.rawBody, function (err, result) {
+                        //console.dir(result);
+                        var contestData = result.contestResultDocument.contestData;
+                        contestData.classData = contestData.classData.class;
+                        if (contestData.contestName === undefined || contestData.contestName === null) {
+                            contestData.contestName = contestData.location;
+                        }
+                        if (contestData.nsrcaDistrict === undefined || contestData.nsrcaDistrict === null) {
+                            contestData.nsrcaDistrict = contestData.district;
+                        }
+                        for (var i = 0; i < contestData.classData.length; i++) {
+                            var classData = contestData.classData[i];
+                            console.dir(classData);
+                            classData.code = classData.$.code;
+                            classData.name = classData.$.name;
+                            classData.contestants = [];
+                            for (var j = 0; j < classData.contestant.length; j++) {
+                                classData.contestants[j] = classData.contestant[j];
+                                classData.contestants[j].realAmaNumber = classData.contestants[j].amaNumber;
+                                classData.contestants[j].name = classData.contestants[j].fullName;
+                                classData.contestants[j].scoringData = classData.contestants[j].scoringData.flightInfo;
+                            }
+                            delete classData['contestant'];
+                        }
+                        console.dir(contestData);
+                        contestData.apiKey = apiUser.apiKey;
+                        var handlePromise = handleContestJSON(contestData, contestID);
+                        handlePromise.then(function(contestID) {
+                            res.statusCode = 200;
+                            res.json({'contestID': contestID});
+                        });
+                    });
                 }
-                console.dir(contestData);
-                handleContestJSON(contestData, contestID);
-            })
+            });
+        } else {
+            console.log("No Authorization header found");
+            res.statusCode = 401;
+            res.end("Unauthorized");
+            return;
         }
     } else {
         res.statusCode = 400;
         res.end('POST only API');
         return;
     }
+};
+
+exports.processContestantResults = function(req, res) {
+    if (req.method == 'POST') {
+        if (req.headers['authorization'] !== null && req.headers['authorization'] !== undefined) {
+            console.log("Got Authorization header: " + req.headers['authorization']);
+            global.model.apiUser.findOne({"apiKey": req.headers['authorization']}, function (err, apiUser) {
+                if (err !== null && err !== undefined) {
+                    console.log("Error with finding apiKey, results not processed: ", err);
+                    res.statusCode = 401;
+                    res.end("Unauthorized");
+                    return;
+                }
+                if ((apiUser === null || apiUser === undefined) && (!global.localAllowed || req.headers.authorization !== 'local')) {
+                    console.log("Unauthorized call to processContestant results, no such apiKey found");
+                    res.statusCode = 401;
+                    res.end("Unauthorized");
+                    return;
+                }
+                if (apiUser === null || apiUser === undefined) {
+                    apiUser = {"apiKey":"local", "userName":"local user"};
+                }
+                console.log("Got contestant results with valid apiKey for user: " + apiUser.userName + ", processing");
+                var contestID = req.params.contestId;
+                if (contestID === undefined || contestID === null) {
+                    res.statusCode = 400;
+                    res.end("a contestID is required for all contestantResult postings");
+                }
+                if (req.is('json')) {
+                    var contestantResults = req.body;
+                    contestantResults.apiKey = apiUser.apiKey;
+                    contestantResults.contestID = req.params.contestId;
+                    contestantResults.realClassName = contestantResults.schedules[0].name;
+                    for (var i = 0; i < contestantResults.schedules.length; i++) {
+                        for (var j = 0; j < contestantResults.schedules[i].maneuvers.length; j++) {
+                            for (var k = 0; k < contestantResults.schedules[i].maneuvers[j].flights.length; k++) {
+                                var flight = contestantResults.schedules[i].maneuvers[j].flights[k];
+                                flight.JudgeManeuverScores = [];
+                                for (var l = 0; l < flight.judge.length; l++) {
+                                    flight.JudgeManeuverScores[l] = {
+                                        judgeId: flight.judge[l].id,
+                                        score:   flight.judge[l].score
+                                    };
+                                }
+                                delete flight['judge'];
+                            }
+                        }
+                    }
+                    handleContestantJSON(contestantResults, contestID).then(function (contestID, amaNumber) {
+                        res.statusCode = 200;
+                        res.json({'contestID': contestID, 'amaNumber': amaNumber});
+                    }).fail(function(err) {
+                        res.statusCode = 500;
+                        res.json({'err':err});
+                    });
+                } else if (req.is('xml')) {
+                    var parser = new xml2js.Parser({explicitArray: false});
+                    //console.log(req.rawBody);
+                    parser.parseString(req.rawBody, function (err, result) {
+                        console.dir(result);
+                        var contestantResults = result.contestantResultDocument;
+                        contestantResults.contestID = req.params.contestId;
+                        contestantResults.schedules = contestantResults.schedules.schedule;
+                        if (!Array.isArray(contestantResults.schedules)) {
+                            contestantResults.schedules = [contestantResults.schedules];
+                        }
+                        console.dir(contestantResults);
+                        console.dir(contestantResults.schedules);
+                        if (contestantResults.schedules[0].name === undefined) {
+                            contestantResults.schedules[0].name = contestantResults.className;
+                        }
+                        contestantResults.realClassName = contestantResults.schedules[0].name;
+                        for (var i = 0; i < contestantResults.schedules.length; i++) {
+                            contestantResults.schedules[i].maneuvers = contestantResults.schedules[i].maneuvers.maneuver;
+                            console.dir(contestantResults.schedules[i]);
+                            for (var j = 0; j < contestantResults.schedules[i].maneuvers.length; j++) {
+                                contestantResults.schedules[i].maneuvers[j].flights = contestantResults.schedules[i].maneuvers[j].flights.flight;
+                                console.dir(contestantResults.schedules[i].maneuvers[j]);
+                                for (var k = 0; k < contestantResults.schedules[i].maneuvers[j].flights.length; k++) {
+
+                                    var flight = contestantResults.schedules[i].maneuvers[j].flights[k];
+                                    if (flight.round === undefined || flight.round === null) {
+                                        flight.round = (k+1).toString();
+                                    }
+                                    flight.JudgeManeuverScores = [];
+                                    for (var l = 0; l < flight.judge.length; l++) {
+                                        if (flight.judge[l].id === undefined || flight.judge[l].id === null) {
+                                            flight.judge[l].id = (l+1).toString();
+                                        }
+                                        flight.JudgeManeuverScores[l] = {
+                                            judgeId: flight.judge[l].id,
+                                            score:   flight.judge[l].score
+                                        };
+                                    }
+                                    console.dir(flight);
+                                    delete flight['judge'];
+                                }
+                            }
+                        }
+                        contestantResults.apiKey = apiUser.apiKey;
+                        handleContestantJSON(contestantResults, contestID).then(function (contestID, amaNumber) {
+                            res.statusCode = 200;
+                            res.json({'contestID': contestID, 'amaNumber': amaNumber});
+                        }).fail(function(err) {
+                            res.statusCode = 500;
+                            res.json({'err':err});
+                        });
+                    });
+                }
+            });
+        } else {
+            res.statusCode = 401;
+            res.end("Unauthorized");
+            return;
+        }
+    } else {
+        res.statusCode = 400;
+        res.end('POST only API');
+        return;
+    }
+};
+
+function handleContestantJSON(contestantResults, contestId) {
+    var myPromise = Q.defer();
+    var promise = deleteContestantResultsByContestIDAndAMANumber(contestId, contestantResults.amaNumber, contestantResults.className);
+    promise.then(function () {
+        //console.log('preparing to save contestantResults to mongo');
+        var tmp = new model.contestantResult(contestantResults);
+        tmp.save(function (err, contestantResults) {
+            if (err !== undefined && err !== null) {
+                console.log('error saving contestantResults: ' + err);
+                myPromise.reject(new Error('error saving contestantResults: ' + err));
+            } else {
+                console.log('saved contestantResults: ' + contestantResults.amaNumber );
+                myPromise.resolve(contestantResults);
+            }
+        });
+    });
+    return myPromise.promise;
 }
 
 function handleContestJSON(contestData, contestID) {
-    //var promise = deleteContestDataByContestID(contestID);
+    var myPromise = Q.defer();
+    var promise = deleteContestDataByContestID(contestID);
     contestData.contestID = contestID;
 
     console.log('preparing to save contestData to mongo');
     var tmp = new model.contestData(contestData);
-    tmp.save(function (err, contestData) {
-        console.log('saved contestData err=' + err);
+    promise.then(function() {
+        tmp.save(function (err, contestData) {
+            if (err !== undefined && err !== null) {
+                console.log('error saving contestData: ' + err);
+                myPromise.reject(new Error('error saving contestData: ' + err));
+            } else {
+                console.log('saved contestData err=' + err);
+                myPromise.resolve(contestID);
+            }
+        });
+    }).fail(function(err) {
+        console.log('error deleting old contestData for ' + contestID + ': ' + err);
+        myPromise.reject(err);
     });
+    return myPromise.promise;
 
 }
 
@@ -509,6 +712,11 @@ exports.contestantResults = function(req, res) {
     }
 };
 
+
+
+
+
+
 function parseContestDate(a) {
     var adate = a.date;
     console.log('Parsing date: ' + a.date);
@@ -629,4 +837,31 @@ exports.addPilotTimeStamp = function(req, res) {
         }
         res.json(pilots);
     });
+};
+
+function deleteContestDataByContestID(contestID) {
+    console.log('look for ContestData: ' + contestID);
+    var deferred = Q.defer();
+    model.contestData.remove({'contestID': contestID}, function(err) {
+        if (err) {
+            deferred.reject(new Error('Problem deleting contestData: ' + contestID));
+        } else {
+            deferred.resolve();
+        }
+    });
+    return deferred.promise;
 }
+
+function deleteContestantResultsByContestIDAndAMANumber(contestID, amaNumber, className) {
+    console.log('look for ContestantResults: (' + contestID + ", " + amaNumber + ", " + className + ")");
+    var deferred = Q.defer();
+    model.contestantResult.remove({'contestID': contestID, 'amaNumber':amaNumber, 'className':className}, function(err) {
+        if (err) {
+            deferred.reject(new Error('Problem deleting contestantResults: (' + contestID + ", " + amaNumber + ", " + className + ")"));
+        } else {
+            deferred.resolve();
+        }
+    });
+    return deferred.promise;
+}
+

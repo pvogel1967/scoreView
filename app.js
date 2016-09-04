@@ -74,18 +74,34 @@ app.use('/api/processContestResults', function(req, res, next) {
     });
 });
 
+app.use('/api/processContestantResults', function(req, res, next) {
+    if (!req.is('xml')) next();
+    req.rawBody = '';
+    req.setEncoding('utf8');
+
+    req.on('data', function(chunk) {
+        req.rawBody += chunk;
+    });
+
+    req.on('end', function() {
+        next();
+    });
+});
+
 //app.use('/img', express.static(img));
 app.use(app.router);
 //app.set('env', 'production');
 // production only
+global.localAllowed = true;
 if (app.get('env') == 'production') {
     // production only
     // TODO
+    global.localAllowed = false;
 } else {
     app.use(express.errorHandler());
     var mdns = require('mdns2');
 }
-
+console.dir(global);
 var testScoreExport = function(req, res) {
     var className = req.params.className;
     var contestantNum = req.params.contestantNum;
@@ -223,7 +239,9 @@ app.get('/api/readContestResults', function(req, res) {
     var promises = [];
     processContestResultsData(importFilePath, promises);
 });
-//app.post('/api/processContestResults/:contestId', api.processContestResults);
+app.post('/api/processContestResults/:contestId', api.processContestResults);
+app.post('/api/processContestResults/', api.processContestResults);
+app.post('/api/processContestantResults/:contestId', api.processContestantResults);
 app.get('/api/secured/pilot/:amaid/class/:classcode', api.contestantAllResults);
 
 // redirect all others to the index (HTML5 history)
