@@ -1,0 +1,93 @@
+.container-fluid
+    .page-header
+    .row
+        .col-lg-2.col-md-2.col-sm-4.col-xs-12
+            .panel
+                .row(ng-repeat="year in contestList")
+                    .panel.panel-primary
+                        .panel-heading
+                            h4.panel-title {{year.year}} Scores
+                        .panel-body
+                            accordion
+                                accordion-group(heading="District: {{district.district}}", ng-repeat="district in year.districts")
+                                    .row(ng-repeat="row in district.contests")
+                                        .col-xs-12
+                                            a(href="/{{row.contestID}}") {{contestName(row)}}
+                .row
+                    .panel.panel-primary
+                        .panel-heading
+                            h4.panel-title Downloads
+                        .panel-body
+                            .row
+                                .col-xs-12
+                                    a(href="http://amapatternscore.blob.core.windows.net/clickonce/setup.exe", download="setup.exe") MasterScoring app
+                            .row
+                                .col-xs-12
+                                    a(href="https://www.dropbox.com/s/kb1rw5uvyt7n0hm/ScribeAdapter.exe", download="ScribeAdapter.exe") Scribe Adapter
+                            .row
+                                .col-xs-12
+                                    a(href="https://itunes.apple.com/us/app/patternscoring/id1018433564?ls=1&mt=8#")
+                                        img(src="/img/AppStoreBadge.svg" class="img-resposive")
+                            .row
+                                .col-xs-12
+                                    a(href="https://www.dropbox.com/s/aqu6blu7zrpp2w8/PatternScoringManual.pdf?dl=1", download="PatternScoringManual.pdf") Scribe Manual
+        .col-lg-10.col-md-10.col-sm-8.col-xs-12
+            .panel.panel-primary
+                .panel-heading
+                    h2.panel-title Score Keeping for Precision Aerobatics
+                .panel-body
+                    h3 Introduction
+                    .row
+                        .col-lg-7.col-md-8.col-sm-12.col-xs-12
+                            p
+                                | This site provides real-time scores for precision aerobatics events that are in progress or have been completed
+                                | and that are using our scoring system.  This system is also able to utilize
+                                | an iPod + game controller based electronic scribe system for enhancing the score keeping
+                                | at precision aerobatic events.  The system was designed to be loosely-coupled to the underlying PC (or Mac)-based scoring
+                                | program so that we can accomodate any scoring application, as long as that application provides some set of interfaces for
+                                | accessing the contest data (contest name, what classes are being flown, the contestants in each class, etc.) as well as a way to
+                                | provide score data for each maneuver from each judge.
+                        .col-lg-5.col-md-4.col-sm-12.col-xs-12
+                            img(src="/img/scoreController.jpg" class="img-responsive")
+                    p
+                        | At the moment, the only fully supported scoring application is the&nbsp;
+                        a(href="http://amapatternscore.blob.core.windows.net/clickonce/setup.exe") Master Scoring App
+                        |  developed by Scott Smith in
+                        | NSRCA D1 to support the matrix format required by the NATS, though it also fully supports standard local contest formats, MAAC F3A formats, etc.
+                        | Click the Master Scoring link on the left to download the Master Scoring app for Windows.
+                    p
+                        | Working with Scott Smith, we've built an&nbsp;
+                        a(href="https://www.dropbox.com/s/kb1rw5uvyt7n0hm/ScribeAdapter.exe") adapter
+                        |  that runs alongside the MasterScoring app to deliver electronic-scribe based scoring and hosts a local scoreboard website
+                        | that can easily be displayed at the field using a simple 19" or larger LCD TV with an HDMI port connected to a simple
+                        | Raspberry Pi System-on-a-Chip computer (or any computer with an HDMI port) running the Chrome browser.  In fact, the adapter
+                        | application is also what's running on the site here for this page and all the contest scoreboards.
+                    h3 Why?
+                    p
+                        | The first question that comes to many pilots is "why?"  Why change the paper-based scoring system we've been using for years?
+                        | Well, consider:
+                        ul
+                            li At a contest with 20 pilots flying 6 rounds there are 4560 individual scores to be entered into the scoring computer.  That's
+                            | 4560 chances for an error to be made in data entry, requiring each pilot to cross-check 228 scores.
+                            li A judge must simultaneously keep their eye on the plane while reading the maneuver description/Aresti and mentally counting downgrades,
+                            | then write the score down without losing sight of the airplane.  This essentially impossible task (unless a scribe is provided, which is
+                            | very rare at a local contest) means judging often degrades to "impression judging" because of the task loading we impose on judges.
+                            li For the score keeper, they are typically unable to participate in the camaraderie of a contest and cannot learn from watching other
+                            | pilots fly or relax prior to their competition flights because falling behind in score entry delays the entire contest.
+                    p
+                        | The electonic scribe system is designed to solve all of the above by providing a very simple, eyes-free scoring interface for the judge
+                        | and wirelessly transmits the scores to the scoring computer after the judge has had a chance to review while the next pilot prepares to compete.
+                        ul
+                            li Each maneuver is read to the judge through earbuds or other headphone device (at the judge's discretion).
+                            li A simple game controller allows the judge to tally downgrades as they are seen with simple button clicks without taking their
+                            | eyes off the plane.  Pull a trigger to advance to the next maneuver.
+                            li The current score is voiced through the earbuds as it changes so the judge is always aware of the score and knows that their button click
+                            | was successfully registered.
+                    h3 How?
+                    p
+                        | The easiest way to learn the scoring system is to use it in a low-pressure environment, while rolling the system out I try to be at the field
+                        | with the system on the practice day prior to a contest for everyone to use it.  If that's not possible, it's been my experience that a brief
+                        | intro like the video below and having someone help with the first 1-2 contestants during a contest will get you up to speed using the system
+                        | quite quickly.  If you can manage an RC plane transmitter with switches, etc. to fly a plane, you can manage this controller!
+                    p
+                    iframe(id="ytplayer",type="text/html", width="640", height="375", allowfullscreen=true, src="https://www.youtube.com/embed/RIKztfcOmOo?autoplay=0&origin=www.patternscoring.com", frameborder="0")

@@ -4,16 +4,18 @@
 var mongoose = require('mongoose');
 var Q = require('q');
 var ss=require('simple-statistics');
-var mongoConnectionString = "mongodb://patternscoring:patternscoring@candidate.21.mongolayer.com:10104/patternscoring";
+var mongoConnectionString = "mongodb://patternscoring:patternscoring@candidate.20.mongolayer.com:10104/patternscoring";
 var model = require('./model/model');
 mongoose.connect(mongoConnectionString);
 var db = mongoose.connection;
 db.on('error', console.error.bind(console, 'connection error:'));
 db.once('open', function() {
-    model.contestantResult.find({"amaNumber": "L732", "className":"402"}, function(err, results) {
+    model.contestantResult.find({"amaNumber": "L732", "realClassName":"Intermediate (2015)"}, function(err, results) {
         if (err !== null) {
-            res.statusCode = 500;
-            res.end('unable to get all results for ' + req.params.amaid + ' in class ' + req.params.classcode);
+            //res.statusCode = 500;
+            //res.end
+            //console.log('unable to get all results for ' + req.params.amaid + ' in class ' + req.params.classcode);
+	    console.log('error from contestantResult.find: ' + err);
         }
         var maneuverData = [];
         var contestManeuverData = [];
@@ -48,16 +50,20 @@ db.once('open', function() {
                     var scoreArray = [];
                     var maneuver = sched.maneuvers[m];
                     if (maneuver != null) {
+                        var flightScores = [];
                         for (var r = 0; r < maneuver.flights.length; r++) {
                             for (var j = 0; j < maneuver.flights[r].JudgeManeuverScores.length; j++) {
                                 var score = maneuver.flights[r].JudgeManeuverScores[j].score;
                                 scoreArray.push(score);
                                 allScores.push(score);
-                                maneuverData[m].push(score);
+                                flightScores.push(score);
                             }
+                            maneuverData[m].push(ss.mean(flightScores));
                         }
                     }
-                    contestManeuverData[m].push([i, ss.mean(scoreArray)]);
+                    if (scoreArray.length > 0) {
+                        contestManeuverData[m].push([i, ss.mean(scoreArray)]);
+                    }
                 }
             }
 

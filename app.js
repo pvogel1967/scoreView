@@ -50,6 +50,7 @@ var parser = new xml2js.Parser();
 var app = module.exports = express();
 global.app = app;
 global.model = model;
+
 app.set('mongoConnection', process.env.MONGOCONNECTION || "localhost:27017");
 app.set('mongoDB', process.env.MONGODB || "patternscoring");
 app.set('port', process.env.PORT || 80);
@@ -434,7 +435,12 @@ function startServer() {
 }
 
 function openDB(openCallback) {
-    var mongoConnectionString = "mongodb://" + app.get('mongoConnection') + "/" + app.get('mongoDB');
+    var mongoConnection = app.get('mongoConnection');
+    var mongoConnectionString = mongoConnection;
+    if (mongoConnection.indexOf("mongodb://") === -1) {
+      console.log("no mongodb:// found in mongoConnection, composing connection string");
+      mongoConnectionString = "mongodb://" + app.get('mongoConnection') + "/" + app.get('mongoDB');
+    }
     contestAPIData = {
         'MongoServer': addresses[0],
         'MongoPort': "27017",
